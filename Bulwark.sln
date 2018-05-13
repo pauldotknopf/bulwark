@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D4850AE4-C7BC-4650-8ECC-A8A51B187714}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bulwark", "src\Bulwark\Bulwark.csproj", "{AA34DEC1-0CD1-4D52-A7CC-2CA1BA26F17A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{4C69DC2C-1AB4-4532-B995-29F567430CE3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bulwark.Tests", "test\Bulwark.Tests\Bulwark.Tests.csproj", "{F98B7581-4015-4879-9BC7-84AD96F93284}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AA34DEC1-0CD1-4D52-A7CC-2CA1BA26F17A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA34DEC1-0CD1-4D52-A7CC-2CA1BA26F17A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA34DEC1-0CD1-4D52-A7CC-2CA1BA26F17A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA34DEC1-0CD1-4D52-A7CC-2CA1BA26F17A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F98B7581-4015-4879-9BC7-84AD96F93284}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F98B7581-4015-4879-9BC7-84AD96F93284}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F98B7581-4015-4879-9BC7-84AD96F93284}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F98B7581-4015-4879-9BC7-84AD96F93284}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AA34DEC1-0CD1-4D52-A7CC-2CA1BA26F17A} = {D4850AE4-C7BC-4650-8ECC-A8A51B187714}
+		{F98B7581-4015-4879-9BC7-84AD96F93284} = {4C69DC2C-1AB4-4532-B995-29F567430CE3}
+	EndGlobalSection
+EndGlobal
