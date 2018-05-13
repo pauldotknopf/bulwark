@@ -1,11 +1,11 @@
 ﻿using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Bulwark.Approvers;
-using Bulwark.Approvers.Impl;
+using Bulwark.Strategy.ApproversConfig;
+using Bulwark.Strategy.ApproversConfig.Impl;
 using Xunit;
 
-namespace Bulwark.Tests
+namespace Bulwark.Tests.ApproversConfig
 {
     public class ApproversParserTests
     {

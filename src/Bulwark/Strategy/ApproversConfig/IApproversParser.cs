@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace Bulwark.Approvers
+namespace Bulwark.Strategy.ApproversConfig
 {
     public interface IApproversParser
     {

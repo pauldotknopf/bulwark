@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Bulwark.Approvers
+namespace Bulwark.Strategy.ApproversConfig
 {
     public class ApproversConfig
     {

@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Bulwark.Approvers.Impl
+namespace Bulwark.Strategy.ApproversConfig.Impl
 {
     public class ApproversParser : IApproversParser
     {
