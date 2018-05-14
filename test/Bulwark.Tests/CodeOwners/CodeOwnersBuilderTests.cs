@@ -25,11 +25,10 @@ namespace Bulwark.Tests.CodeOwners
         }
 
         [Theory]
-        [InlineData("*", "testfile.txt")]
-        [InlineData("*", "test/testfile.txt")]
+        [InlineData("*", "/testfile.txt")]
+        [InlineData("*", "/test/testfile.txt")]
         [InlineData("**.txt", "/testfile.txt")]
-        [InlineData("*.txt", "testfile.txt")]
-        [InlineData("/*.txt", "testfile.txt")]
+        [InlineData("*.txt", "/testfile.txt")]
         public async Task Can_match_file(string pattern, string file)
         {
             Helpers.WriteCodeOwnersEntry(

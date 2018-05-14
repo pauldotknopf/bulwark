@@ -21,53 +21,66 @@ namespace Bulwark.Strategy.CodeOwners.Impl
         {
             var result = new List<string>();
 
-            if (string.IsNullOrEmpty(path))
-                return result;
+            if (string.IsNullOrEmpty(path)) throw new ArgumentOutOfRangeException();
+            if(!path.StartsWith("/")) throw new Exception("All paths must start with a /");
 
-            // First, get all parent code files.
-            var codeFiles = WalkParentsForCodeOwners(provider, path.StartsWith("/") ? path : $"{Path.DirectorySeparatorChar}{path}");
-            var codeFileContent = new StringBuilder();
-            foreach (var codeFile in codeFiles)
+            await WalkParentsForCodeOwners(provider, path, (directory, config) =>
             {
-                using(var stream = codeFile.CreateReadStream())
-                using(var reader = new StreamReader(stream))
+                foreach (var entry in config.Entries)
                 {
-                    codeFileContent.Append(await reader.ReadToEndAsync());
+                    if(Wildmatch.Match(entry.Pattern.TrimStart('/'), path.TrimStart('/'), MatchFlags.CaseFold) == MatchResult.Match)
+                    {
+                        result.AddRange(entry.Users);
+                    }
                 }
-            }
 
-            var codeOwnerConfig = await _parser.ParserConfig(codeFileContent.ToString());
-            
-            foreach (var entry in codeOwnerConfig.Entries)
-            {
-                if(Wildmatch.Match(entry.Pattern.TrimStart('/'), path.TrimStart('/'), MatchFlags.CaseFold) == MatchResult.Match)
-                {
-                    result.AddRange(entry.Users);
-                }
-            }
+                return Task.CompletedTask;
+            });
             
             return result;
         }
 
-        private List<IFileInfo> WalkParentsForCodeOwners(IFileProvider fileProvider, string path)
+        private async Task WalkParentsForCodeOwners(IFileProvider provider, string path, Func<string, CodeOwnerConfig, Task> callback)
         {
-            var result = new List<IFileInfo>();
-            
-            var codeOwnersFileInfo = fileProvider.GetFileInfo(Path.Combine(path, "CODEOWNERS"));
-            if (codeOwnersFileInfo.Exists)
-            {
-                result.Add(codeOwnersFileInfo);
-            }
-            
-            // Get the code files from parent directories.
-            var parentDirectory = Path.GetDirectoryName(path);
-            if (string.IsNullOrEmpty(parentDirectory)) return result;
-            foreach (var child in WalkParentsForCodeOwners(fileProvider, parentDirectory))
-            {
-                result.Add(child);
-            }
+            var results = new Dictionary<string, CodeOwnerConfig>();
 
-            return result;
+            async Task WalkParent(string directory)
+            {
+                var parent = Path.GetDirectoryName(directory);
+                
+                if (string.IsNullOrEmpty(parent)) return; // this is the root
+
+                var config = await GetConfigForDirectory(provider, parent);
+                
+                if (config != null)
+                {
+                    results.Add(parent, config);   
+                }
+
+                await WalkParent(parent);
+            }
+            
+            await WalkParent(path);
+
+            foreach (var result in results)
+            {
+                await callback(result.Key, result.Value);
+            }
+        }
+
+        private async Task<CodeOwnerConfig> GetConfigForDirectory(IFileProvider provider, string directory)
+        {
+            var directoryContents = provider.GetDirectoryContents(directory);
+            if (!directoryContents.Exists) return null;
+            
+            var codeOwnersFileInfo = provider.GetFileInfo(Path.Combine(directory, "CODEOWNERS"));
+            if (!codeOwnersFileInfo.Exists) return null;
+
+            using(var stream = codeOwnersFileInfo.CreateReadStream())
+            using(var reader = new StreamReader(stream))
+            {
+                return await _parser.ParserConfig(await reader.ReadToEndAsync());
+            }
         }
     }
 }
