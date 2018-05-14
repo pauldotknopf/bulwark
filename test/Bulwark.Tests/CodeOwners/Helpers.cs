@@ -15,6 +15,13 @@ namespace Bulwark.Tests.CodeOwners
             {
                 content.AppendLine($"{entry.Pattern} {string.Join(" ", entry.Users)}");
             }
+
+            var parentDirectory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(parentDirectory))
+            {
+                if (!Directory.Exists(parentDirectory))
+                    Directory.CreateDirectory(parentDirectory);
+            }
             if(File.Exists(path))
                 File.Delete(path);
             File.WriteAllText(path, content.ToString());

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.FileProviders;
@@ -24,11 +25,11 @@ namespace Bulwark.Strategy.CodeOwners.Impl
             if (string.IsNullOrEmpty(path)) throw new ArgumentOutOfRangeException();
             if(!path.StartsWith("/")) throw new Exception("All paths must start with a /");
 
-            await WalkParentsForCodeOwners(provider, path, (directory, config) =>
+            await WalkParentsForCodeOwners(provider, path, (directory, relativePath, config) =>
             {
                 foreach (var entry in config.Entries)
                 {
-                    if(Wildmatch.Match(entry.Pattern.TrimStart('/'), path.TrimStart('/'), MatchFlags.CaseFold) == MatchResult.Match)
+                    if(Wildmatch.Match(entry.Pattern.TrimStart('/'), relativePath.TrimStart('/'), MatchFlags.CaseFold) == MatchResult.Match)
                     {
                         result.AddRange(entry.Users);
                     }
@@ -40,10 +41,10 @@ namespace Bulwark.Strategy.CodeOwners.Impl
             return result;
         }
 
-        private async Task WalkParentsForCodeOwners(IFileProvider provider, string path, Func<string, CodeOwnerConfig, Task> callback)
+        private async Task WalkParentsForCodeOwners(IFileProvider provider, string path, Func<string, string, CodeOwnerConfig, Task> callback)
         {
-            var results = new Dictionary<string, CodeOwnerConfig>();
-
+            var results = new Dictionary<Tuple<string, string>, CodeOwnerConfig>();
+    
             async Task WalkParent(string directory)
             {
                 var parent = Path.GetDirectoryName(directory);
@@ -54,7 +55,7 @@ namespace Bulwark.Strategy.CodeOwners.Impl
                 
                 if (config != null)
                 {
-                    results.Add(parent, config);   
+                    results.Add(new Tuple<string, string>(parent, path.Substring(parent.Length)), config);   
                 }
 
                 await WalkParent(parent);
@@ -62,9 +63,9 @@ namespace Bulwark.Strategy.CodeOwners.Impl
             
             await WalkParent(path);
 
-            foreach (var result in results)
+            foreach (var result in results.Reverse())
             {
-                await callback(result.Key, result.Value);
+                await callback(result.Key.Item1, result.Key.Item2, result.Value);
             }
         }
 
