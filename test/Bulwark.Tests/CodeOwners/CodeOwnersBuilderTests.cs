@@ -67,11 +67,24 @@ namespace Bulwark.Tests.CodeOwners
             Helpers.WriteCodeOwners(
                 Path.Combine(_workingDirectory.Directory, "test1", "CODEOWNERS"),
                 new CodeOwnerConfig()
-                    .AddEntry("test2.pdf", entry => entry.AddUser("user2")));
+                    .AddEntry("test2.pdf", entry => entry.AddUser("user2"))
+                    .AddEntry("test2.txt", entry => entry.AddUser("user3")));
+            
+            var result = await _codeOwnersBuilder.GetOwners(_fileProvider, "/test1/test2.txt");
+            
+            Assert.Equal(new List<string>{ "user1", "user3" }, result);
+        }
+
+        [Fact]
+        public async Task Can_remove_inherited_users()
+        {
+            Helpers.WriteCodeOwners(
+                Path.Combine(_workingDirectory.Directory, "CODEOWNERS"),
+                new CodeOwnerConfig().AddEntry("*", entry => entry.AddUser("user1").AddUser("user2").AddUser("user3")));
             Helpers.WriteCodeOwners(
                 Path.Combine(_workingDirectory.Directory, "test1", "CODEOWNERS"),
                 new CodeOwnerConfig()
-                    .AddEntry("test2.txt", entry => entry.AddUser("user3")));
+                    .AddEntry("test2.txt", entry => entry.AddUser("!user2")));
             
             var result = await _codeOwnersBuilder.GetOwners(_fileProvider, "/test1/test2.txt");
             

@@ -31,7 +31,19 @@ namespace Bulwark.Strategy.CodeOwners.Impl
                 {
                     if(Wildmatch.Match(entry.Pattern.TrimStart('/'), relativePath.TrimStart('/'), MatchFlags.CaseFold) == MatchResult.Match)
                     {
-                        result.AddRange(entry.Users);
+                        foreach (var user in entry.Users)
+                        {
+                            if (user.StartsWith("!"))
+                            {
+                                if (result.Contains(user.Substring(1)))
+                                    result.Remove(user.Substring(1));
+                            }
+                            else
+                            {
+                                if(!result.Contains(user))
+                                    result.Add(user);
+                            }
+                        }
                     }
                 }
 
