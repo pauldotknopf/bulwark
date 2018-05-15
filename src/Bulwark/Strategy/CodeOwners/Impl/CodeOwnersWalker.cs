@@ -9,11 +9,11 @@ using SharpWildmatch;
 
 namespace Bulwark.Strategy.CodeOwners.Impl
 {
-    public class CodeOwnersBuilder : ICodeOwnersBuilder
+    public class CodeOwnersWalker : ICodeOwnersWalker
     {
         readonly ICodeOwnersParser _parser;
 
-        public CodeOwnersBuilder(ICodeOwnersParser parser)
+        public CodeOwnersWalker(ICodeOwnersParser parser)
         {
             _parser = parser;
         }

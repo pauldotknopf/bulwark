@@ -3,27 +3,29 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Bulwark.FileSystem;
 using Bulwark.Strategy.ApproversConfig.Impl;
 using Bulwark.Strategy.CodeOwners;
 using Bulwark.Strategy.CodeOwners.Impl;
 using FluentAssert;
+using LibGit2Sharp;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Xunit;
 
 namespace Bulwark.Tests.CodeOwners
 {
-    public class CodeOwnersBuilderTests : IDisposable
+    public class CodeOwnersWalkerTests : IDisposable
     {
         readonly WorkingDirectorySession _workingDirectory;
         readonly IFileProvider _fileProvider;
-        readonly ICodeOwnersBuilder _codeOwnersBuilder;
+        readonly ICodeOwnersWalker _codeOwnersBuilder;
 
-        public CodeOwnersBuilderTests()
+        public CodeOwnersWalkerTests()
         {
             _workingDirectory = new WorkingDirectorySession();
             _fileProvider = new PhysicalFileProvider(_workingDirectory.Directory);
-            _codeOwnersBuilder = new CodeOwnersBuilder(new CodeOwnersParser());
+            _codeOwnersBuilder = new CodeOwnersWalker(new CodeOwnersParser());
         }
 
         [Theory]
@@ -76,6 +78,32 @@ namespace Bulwark.Tests.CodeOwners
         }
 
         [Fact]
+        public async Task Can_inherit_from_parent_with_repo()
+        {
+            Helpers.WriteCodeOwners(
+                Path.Combine(_workingDirectory.Directory, "CODEOWNERS"),
+                new CodeOwnerConfig().AddEntry("*", entry => entry.AddUser("user1")));
+            Helpers.WriteCodeOwners(
+                Path.Combine(_workingDirectory.Directory, "test1", "CODEOWNERS"),
+                new CodeOwnerConfig()
+                    .AddEntry("test2.pdf", entry => entry.AddUser("user2"))
+                    .AddEntry("test2.txt", entry => entry.AddUser("user3")));
+
+            Repository.Init(_workingDirectory.Directory);
+            var author = new Signature("Paul Knopf", "pauldotknopf@gmail.com", DateTimeOffset.Now);
+            using (var repo = new Repository(_workingDirectory.Directory))
+            {
+                Commands.Stage(repo, "*");
+                var commit = repo.Commit("First commit", author, author);
+                var provider = new RepositoryFileSystemProvider(commit);
+                
+                var result = await _codeOwnersBuilder.GetOwners(provider, "/test1/test2.txt");
+            
+                Assert.Equal(new List<string>{ "user1", "user3" }, result);
+            }
+        }
+        
+        [Fact]
         public async Task Can_remove_inherited_users()
         {
             Helpers.WriteCodeOwners(
@@ -90,7 +118,7 @@ namespace Bulwark.Tests.CodeOwners
             
             Assert.Equal(new List<string>{ "user1", "user3" }, result);
         }
-        
+
         public void Dispose()
         {
             _workingDirectory.Dispose();
