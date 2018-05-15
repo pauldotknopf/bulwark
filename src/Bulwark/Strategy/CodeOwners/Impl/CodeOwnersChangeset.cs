@@ -24,8 +24,30 @@ namespace Bulwark.Strategy.CodeOwners.Impl
 
             if (parentCommits.Count == 0)
             {
-                throw new NotImplementedException("First commit not done yet");
-            }else if (parentCommits.Count == 1)
+                var paths = new HashSet<string>();
+                
+                // We the users for every file in this commit, since there is no diff to be made.
+                void WalkTree(Tree tree)
+                {
+                    foreach (var entry in tree)
+                    {
+                        if (entry.TargetType == TreeEntryTargetType.Tree)
+                        {
+                            WalkTree(entry.Target as Tree);
+                        }
+                        else
+                        {
+                            if (!paths.Contains(entry.Path))
+                                paths.Add(entry.Path);
+                        }
+                    }
+                }
+                
+                WalkTree(commit.Tree);
+                return await _walker.GetOwners(new RepositoryFileSystemProvider(commit), paths.ToArray());
+            }
+            
+            if (parentCommits.Count == 1)
             {
                 var diff = repo.Diff.Compare<TreeChanges>(parentCommits.First().Tree, commit.Tree);
                 var files = new List<string>();
@@ -44,10 +66,8 @@ namespace Bulwark.Strategy.CodeOwners.Impl
                 var newUsers = await _walker.GetOwners(new RepositoryFileSystemProvider(commit), files.ToArray());
                 return oldUsers.Union(newUsers).ToList();
             }
-            else
-            {
-                throw new NotImplementedException("Merge not done yet");
-            }
+            
+            throw new NotImplementedException("Merge not done yet");
         }
     }
 }
