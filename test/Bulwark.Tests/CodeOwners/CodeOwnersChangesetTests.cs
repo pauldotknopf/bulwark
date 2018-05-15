@@ -41,6 +41,43 @@ namespace Bulwark.Tests.CodeOwners
                 Assert.Equal(users, new List<string> {"user1"});
             }
         }
+
+        [Fact]
+        public async Task Can_get_users_based_on_merge()
+        {
+            Repository.Init(_workingDirectory.Directory);
+            
+            using (var repo = new Repository(_workingDirectory.Directory))
+            {
+                // First commit adds code file.
+                Helpers.WriteCodeOwners(Path.Combine(_workingDirectory.Directory, "CODEOWNERS"),
+                    new CodeOwnerConfig()
+                        .AddEntry("test1.txt", entry => entry.AddUser("user1"))
+                        .AddEntry("test2.txt", entry => entry.AddUser("user2")));
+                Commands.Stage(repo, "*");
+                repo.Commit("First commit", _author, _author);
+                
+                // Create branch and add test1.txt
+                repo.CreateBranch("test1");
+                Commands.Checkout(repo, "test1");
+                File.WriteAllText(Path.Combine(_workingDirectory.Directory, "test1.txt"), "test");
+                Commands.Stage(repo, "*");
+                var test1Commit = repo.Commit("Test 1 commit", _author, _author);
+                
+                // Create another branch and add test2.txt
+                Commands.Checkout(repo, "master");
+                repo.CreateBranch("test2");
+                Commands.Checkout(repo, "test2");
+                File.WriteAllText(Path.Combine(_workingDirectory.Directory, "test2.txt"), "test");
+                Commands.Stage(repo, "*");
+                repo.Commit("Test 2 commit", _author, _author);
+
+                var mergeResult = repo.Merge(test1Commit, _author);
+
+                var users = await _changeset.GetUsersForChangeset(mergeResult.Commit);
+                Assert.Equal(users, new List<string>{ "user1", "user2" });
+            }
+        }
         
         [Fact]
         public async Task Can_get_code_owners_based_on_new_file()

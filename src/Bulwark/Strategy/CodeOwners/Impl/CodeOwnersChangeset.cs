@@ -21,7 +21,7 @@ namespace Bulwark.Strategy.CodeOwners.Impl
             var repo = ((IBelongToARepository) commit).Repository;
 
             var parentCommits = commit.Parents.ToList();
-
+            
             if (parentCommits.Count == 0)
             {
                 var paths = new HashSet<string>();
@@ -46,28 +46,47 @@ namespace Bulwark.Strategy.CodeOwners.Impl
                 WalkTree(commit.Tree);
                 return await _walker.GetOwners(new RepositoryFileSystemProvider(commit), paths.ToArray());
             }
-            
-            if (parentCommits.Count == 1)
+
+            var users = new HashSet<string>();
+
+            foreach (var parentCommit in parentCommits)
             {
-                var diff = repo.Diff.Compare<TreeChanges>(parentCommits.First().Tree, commit.Tree);
-                var files = new List<string>();
-                files.AddRange(diff.Added.Select(x => x.Path));
-                files.AddRange(diff.Copied.Select(x => x.Path));
-                files.AddRange(diff.Deleted.Select(x => x.Path));
-                files.AddRange(diff.Modified.Select(x => x.Path));
-                files.AddRange(diff.TypeChanged.Select(x => x.Path));
-                files.AddRange(diff.Conflicted.Select(x => x.Path));
-                files.AddRange(diff.Renamed.Select(x => x.Path));
+                var files = GetAffectedFiles(repo, parentCommit.Tree, commit.Tree);
                 
+                // Since we have a list of all the files changed between these two commits,
                 // We want to inspect the files on both the old commit and new commit.
                 // This ensures we capture users who may have been removed from files
                 // as a result of the commit.
                 var oldUsers = await _walker.GetOwners(new RepositoryFileSystemProvider(parentCommits.First()), files.ToArray());
                 var newUsers = await _walker.GetOwners(new RepositoryFileSystemProvider(commit), files.ToArray());
-                return oldUsers.Union(newUsers).ToList();
+                
+                foreach (var oldUser in oldUsers)
+                {
+                    if (!users.Contains(oldUser))
+                        users.Add(oldUser);
+                }
+                foreach (var newUser in newUsers)
+                {
+                    if (!users.Contains(newUser))
+                        users.Add(newUser);
+                }
             }
-            
-            throw new NotImplementedException("Merge not done yet");
+
+            return users.ToList();
+        }
+
+        private List<string> GetAffectedFiles(IRepository repo, Tree from, Tree to)
+        {
+            var diff = repo.Diff.Compare<TreeChanges>(from, to);
+            var files = new List<string>();
+            files.AddRange(diff.Added.Select(x => x.Path));
+            files.AddRange(diff.Copied.Select(x => x.Path));
+            files.AddRange(diff.Deleted.Select(x => x.Path));
+            files.AddRange(diff.Modified.Select(x => x.Path));
+            files.AddRange(diff.TypeChanged.Select(x => x.Path));
+            files.AddRange(diff.Conflicted.Select(x => x.Path));
+            files.AddRange(diff.Renamed.Select(x => x.Path));
+            return files.Distinct().ToList();
         }
     }
 }
