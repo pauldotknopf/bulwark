@@ -18,12 +18,12 @@ namespace Bulwark.Strategy.CodeOwners.Impl
             _parser = parser;
         }
         
-        public async Task<List<string>> GetOwners(IFileProvider provider, string path)
+        public async Task<List<string>> GetOwnersForPath(IFileProvider provider, string path)
         {
             var result = new List<string>();
 
             if (string.IsNullOrEmpty(path)) throw new ArgumentOutOfRangeException();
-            if(!path.StartsWith("/")) throw new Exception("All paths must start with a /");
+            if (!path.StartsWith("/")) path = $"/{path}";
 
             await WalkParentsForCodeOwners(provider, path, (directory, relativePath, config) =>
             {
@@ -51,6 +51,26 @@ namespace Bulwark.Strategy.CodeOwners.Impl
             });
             
             return result;
+        }
+
+        public async Task<List<string>> GetOwners(IFileProvider provider, params string[] paths)
+        {
+            // TODO: This method should implement caching. For now (dev), I'm leaving it as is.
+            
+            var users = new HashSet<string>();
+            
+            foreach (var path in paths)
+            {
+                foreach (var user in await GetOwnersForPath(provider, path))
+                {
+                    if (!users.Contains(user))
+                    {
+                        users.Add(user);
+                    }
+                }
+            }
+
+            return users.ToList();
         }
 
         private async Task WalkParentsForCodeOwners(IFileProvider provider, string path, Func<string, string, CodeOwnerConfig, Task> callback)

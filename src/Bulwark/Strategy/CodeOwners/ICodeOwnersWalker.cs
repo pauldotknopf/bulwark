@@ -6,6 +6,6 @@ namespace Bulwark.Strategy.CodeOwners
 {
     public interface ICodeOwnersWalker
     {
-        Task<List<string>> GetOwners(IFileProvider provider, string path);
+        Task<List<string>> GetOwners(IFileProvider provider, params string[] paths);
     }
 }
