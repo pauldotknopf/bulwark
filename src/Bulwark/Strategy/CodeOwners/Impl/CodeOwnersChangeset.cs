@@ -66,6 +66,7 @@ namespace Bulwark.Strategy.CodeOwners.Impl
 
                 return codeConfigs.SelectMany(x => x.Entries)
                     .SelectMany(x => x.Users)
+                    .Select(x => x.StartsWith("!") ? x.Substring(1) : x)
                     .Distinct()
                     .ToList();
             }
@@ -117,8 +118,9 @@ namespace Bulwark.Strategy.CodeOwners.Impl
                             var unifiedConfig = await GetCodeOwnerConfigFromChanges(diff);
                             foreach (var user in unifiedConfig.Entries.SelectMany(x => x.Users))
                             {
-                                if (!users.Contains(user))
-                                    users.Add(user);
+                                var realUser = user.StartsWith("!") ? user.Substring(1) : user;
+                                if (!users.Contains(realUser))
+                                    users.Add(realUser);
                             }
                         }
                     }

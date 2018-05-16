@@ -20,7 +20,7 @@ namespace Bulwark.Tests.CodeOwners
             _workingDirectory = new WorkingDirectorySession();
             _changeset = new CodeOwnersChangeset(new CodeOwnersWalker(new CodeOwnersParser()), new CodeOwnersParser());
         }
-
+        
         [Fact]
         public async Task Removing_code_file_notifies_all_users()
         {
@@ -74,6 +74,26 @@ namespace Bulwark.Tests.CodeOwners
                 users = await _changeset.GetUsersForChangeset(commit);
                 
                 Assert.Equal(users, new List<string> {"user2"});
+            }
+        }
+        
+        [Fact]
+        public async Task New_code_file_notifies_all_users_even_negated()
+        {
+            Repository.Init(_workingDirectory.Directory);
+            
+            using (var repo = new Repository(_workingDirectory.Directory))
+            {
+                // Make the initial commit.
+                Helpers.WriteCodeOwners(Path.Combine(_workingDirectory.Directory, "CODEOWNERS"),
+                    new CodeOwnerConfig()
+                        .AddEntry("test1.txt", entry => entry.AddUser("!user1")));
+                Commands.Stage(repo, "*");
+                var commit = repo.Commit("First commit", _author, _author);
+
+                var users = await _changeset.GetUsersForChangeset(commit);
+                
+                Assert.Equal(users, new List<string> {"user1"});
             }
         }
         
