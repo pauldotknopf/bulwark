@@ -126,13 +126,29 @@ namespace Bulwark.Strategy.CodeOwners.Impl
                 
                 // In addition to matching users based on path alone, let's look to see if any
                 // CODEOWNERS file was changed, and if so, call out the users that were added/removed.
+                foreach (var added in changes.Added)
+                {
+                    await CheckForCodeOwnerUsers(added);
+                }
+                foreach (var copied in changes.Copied)
+                {
+                    await CheckForCodeOwnerUsers(copied);
+                }
+                foreach (var deleted in changes.Deleted)
+                {
+                    await CheckForCodeOwnerUsers(deleted);
+                }
                 foreach (var modified in changes.Modified)
                 {
                     await CheckForCodeOwnerUsers(modified);
                 }
-                foreach (var added in changes.Added)
+                foreach (var typeChanged in changes.TypeChanged)
                 {
-                    await CheckForCodeOwnerUsers(added);
+                    await CheckForCodeOwnerUsers(typeChanged);
+                }
+                foreach (var renamed in changes.Renamed)
+                {
+                    await CheckForCodeOwnerUsers(renamed);
                 }
             }
 

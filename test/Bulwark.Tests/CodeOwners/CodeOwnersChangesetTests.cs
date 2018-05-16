@@ -22,6 +22,31 @@ namespace Bulwark.Tests.CodeOwners
         }
 
         [Fact]
+        public async Task Removing_code_file_notifies_all_users()
+        {
+            Repository.Init(_workingDirectory.Directory);
+            
+            using (var repo = new Repository(_workingDirectory.Directory))
+            {
+                // Make the initial commit.
+                Helpers.WriteCodeOwners(Path.Combine(_workingDirectory.Directory, "CODEOWNERS"),
+                    new CodeOwnerConfig()
+                        .AddEntry("test1.txt", entry => entry.AddUser("user1")));
+                Commands.Stage(repo, "*");
+                repo.Commit("First commit", _author, _author);
+
+                
+                File.Delete(Path.Combine(_workingDirectory.Directory, "CODEOWNERS"));
+                Commands.Stage(repo, "*");
+                var commit = repo.Commit("Second commit", _author, _author);
+
+                var users = await _changeset.GetUsersForChangeset(commit);
+
+                Assert.Equal(users, new List<string> {"user1"});
+            }
+        }
+        
+        [Fact]
         public async Task New_code_file_notifies_all_users()
         {
             Repository.Init(_workingDirectory.Directory);
