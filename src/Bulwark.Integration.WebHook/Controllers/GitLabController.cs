@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Bulwark.Integration.GitLab;
 using Bulwark.Integration.Messages;
@@ -49,6 +50,7 @@ namespace Bulwark.Integration.WebHook.Controllers
             using (var streamReader = new StreamReader(Request.Body))
             {
                 var content = await streamReader.ReadToEndAsync();
+                Debug.WriteLine(content);
                 return JsonConvert.DeserializeObject<T>(content);
             }
         }

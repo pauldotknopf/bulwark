@@ -123,11 +123,11 @@ namespace Bulwark.Integration.GitLab.Api
         [JsonProperty("title")]
         public string Title { get; set; }
         
-        [JsonProperty("created_at")]
-        public DateTime CreatedAt { get; set; }
+        //[JsonProperty("created_at")]
+        //public DateTime CreatedAt { get; set; }
         
-        [JsonProperty("updated_at")]
-        public DateTime UpdatedAt { get; set; }
+        //[JsonProperty("updated_at")]
+        //public DateTime UpdatedAt { get; set; }
         
         [JsonProperty("milestone_id")]
         public string MilestoneId { get; set; }
@@ -177,8 +177,8 @@ namespace Bulwark.Integration.GitLab.Api
         [JsonProperty("message")]
         public string Message { get; set; }
         
-        [JsonProperty("timestamp")]
-        public DateTime Timestamp { get; set; }
+        //[JsonProperty("timestamp")]
+        //public DateTime Timestamp { get; set; }
         
         [JsonProperty("url")]
         public string Url { get; set; }
@@ -210,11 +210,11 @@ namespace Bulwark.Integration.GitLab.Api
         [JsonProperty("project_id")]
         public int ProjectId { get; set; }
         
-        [JsonProperty("created_at")]
-        public DateTime CreatedAt { get; set; }
+        //[JsonProperty("created_at")]
+        //public DateTime CreatedAt { get; set; }
         
-        [JsonProperty("updated_at")]
-        public DateTime UpdatedAt { get; set; }
+        //[JsonProperty("updated_at")]
+        //public DateTime UpdatedAt { get; set; }
    
         [JsonProperty("template")]
         public bool Template { get; set; }

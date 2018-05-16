@@ -19,8 +19,11 @@ namespace Bulwark.Integration.WebHook
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
-            services.AddSingleton<IMessageSender, Integration.Messages.Impl.InMemoryMessageSender>();
-            services.AddSingleton<IMessageHandler<GitLab.MergeRequestEvent>, GitLab.MergeRequestEventHandler>();
+            // ReSharper disable RedundantNameQualifier
+            Bulwark.Services.Register(services);
+            Bulwark.Integration.Services.Register(services);
+            Bulwark.Integration.GitLab.Services.Register(services);
+            // ReSharper restore RedundantNameQualifier
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
