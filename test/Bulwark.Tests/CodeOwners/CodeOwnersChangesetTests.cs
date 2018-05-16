@@ -18,9 +18,70 @@ namespace Bulwark.Tests.CodeOwners
         public CodeOwnersChangesetTests()
         {
             _workingDirectory = new WorkingDirectorySession();
-            _changeset = new CodeOwnersChangeset(new CodeOwnersWalker(new CodeOwnersParser()));
+            _changeset = new CodeOwnersChangeset(new CodeOwnersWalker(new CodeOwnersParser()), new CodeOwnersParser());
         }
 
+        [Fact]
+        public async Task New_code_file_notifies_all_users()
+        {
+            Repository.Init(_workingDirectory.Directory);
+            
+            using (var repo = new Repository(_workingDirectory.Directory))
+            {
+                // Make the initial commit.
+                Helpers.WriteCodeOwners(Path.Combine(_workingDirectory.Directory, "CODEOWNERS"),
+                    new CodeOwnerConfig()
+                        .AddEntry("test1.txt", entry => entry.AddUser("user1")));
+                Commands.Stage(repo, "*");
+                var commit = repo.Commit("First commit", _author, _author);
+
+                var users = await _changeset.GetUsersForChangeset(commit);
+                
+                Assert.Equal(users, new List<string> {"user1"});
+                
+                Directory.CreateDirectory(Path.Combine(_workingDirectory.Directory, "testdir"));
+                Helpers.WriteCodeOwners(Path.Combine(_workingDirectory.Directory, "testdir", "CODEOWNERS"),
+                    new CodeOwnerConfig()
+                        .AddEntry("test2.txt", entry => entry.AddUser("user2")));
+                Commands.Stage(repo, "*");
+                commit = repo.Commit("Second commit", _author, _author);
+
+                users = await _changeset.GetUsersForChangeset(commit);
+                
+                Assert.Equal(users, new List<string> {"user2"});
+            }
+        }
+        
+        [Fact]
+        public async Task New_users_in_code_owners_file_gets_notified_regardless_of_path()
+        {
+            Repository.Init(_workingDirectory.Directory);
+            
+            using (var repo = new Repository(_workingDirectory.Directory))
+            {
+                // Make the initial commit.
+                Helpers.WriteCodeOwners(Path.Combine(_workingDirectory.Directory, "CODEOWNERS"),
+                    new CodeOwnerConfig()
+                        .AddEntry("test1.txt", entry => entry.AddUser("user1")));
+                File.WriteAllText(Path.Combine(_workingDirectory.Directory, "test1.txt"), "test");
+                Commands.Stage(repo, "*");
+                repo.Commit("First commit", _author, _author);
+                
+                // Added a user to code file.
+                // Only the new user should be notified, not the user currently in code file.
+                Helpers.WriteCodeOwners(Path.Combine(_workingDirectory.Directory, "CODEOWNERS"),
+                    new CodeOwnerConfig()
+                        .AddEntry("test1.txt", entry => entry.AddUser("user1"))
+                        .AddEntry("test2.txt", entry => entry.AddUser("user2")));
+                Commands.Stage(repo, "*");
+                var commit = repo.Commit("Second commit", _author, _author);
+                
+                var users = await _changeset.GetUsersForChangeset(commit);
+                
+                Assert.Equal(users, new List<string> {"user2"});
+            }
+        }
+        
         [Fact]
         public async Task New_commits_get_owners_for_entire_tree_since_no_diff()
         {

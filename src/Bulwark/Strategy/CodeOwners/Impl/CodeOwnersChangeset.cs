@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using Bulwark.FileSystem;
 using LibGit2Sharp;
@@ -10,10 +13,12 @@ namespace Bulwark.Strategy.CodeOwners.Impl
     public class CodeOwnersChangeset : ICodeOwnersChangeset
     {
         readonly ICodeOwnersWalker _walker;
+        readonly ICodeOwnersParser _parser;
 
-        public CodeOwnersChangeset(ICodeOwnersWalker walker)
+        public CodeOwnersChangeset(ICodeOwnersWalker walker, ICodeOwnersParser parser)
         {
             _walker = walker;
+            _parser = parser;
         }
         
         public async Task<List<string>> GetUsersForChangeset(Commit commit)
@@ -24,34 +29,60 @@ namespace Bulwark.Strategy.CodeOwners.Impl
             
             if (parentCommits.Count == 0)
             {
-                var paths = new HashSet<string>();
+                // Since this is the first commit, let's just find all the code config files
+                // and return all the users found.
+                var codeConfigs = new List<CodeOwnerConfig>();
                 
-                // We the users for every file in this commit, since there is no diff to be made.
-                void WalkTree(Tree tree)
+                async Task WalkTree(Tree tree)
                 {
                     foreach (var entry in tree)
                     {
                         if (entry.TargetType == TreeEntryTargetType.Tree)
                         {
-                            WalkTree(entry.Target as Tree);
+                            await WalkTree(entry.Target as Tree);
+                        }
+                        else if(entry.TargetType == TreeEntryTargetType.Blob)
+                        {
+                            if (entry.Name == "CODEOWNERS")
+                            {
+                                using (var stream = ((Blob) entry.Target).GetContentStream())
+                                {
+                                    using (var reader = new StreamReader(stream))
+                                    {
+                                        codeConfigs.Add(await _parser.ParserConfig(reader.ReadToEnd()));
+                                    }
+                                }
+                            }
                         }
                         else
                         {
-                            if (!paths.Contains(entry.Path))
-                                paths.Add(entry.Path);
+                            // TODO: What is this?
+                            throw new NotImplementedException();
                         }
                     }
                 }
                 
-                WalkTree(commit.Tree);
-                return await _walker.GetOwners(new RepositoryFileSystemProvider(commit), paths.ToArray());
+                await WalkTree(commit.Tree);
+
+                return codeConfigs.SelectMany(x => x.Entries)
+                    .SelectMany(x => x.Users)
+                    .Distinct()
+                    .ToList();
             }
 
             var users = new HashSet<string>();
 
             foreach (var parentCommit in parentCommits)
             {
-                var files = GetAffectedFiles(repo, parentCommit.Tree, commit.Tree);
+                var changes = repo.Diff.Compare<TreeChanges>(parentCommit.Tree, commit.Tree);
+                var files = new List<string>();
+                files.AddRange(changes.Added.Select(x => x.Path));
+                files.AddRange(changes.Copied.Select(x => x.Path));
+                files.AddRange(changes.Deleted.Select(x => x.Path));
+                files.AddRange(changes.Modified.Select(x => x.Path));
+                files.AddRange(changes.TypeChanged.Select(x => x.Path));
+                files.AddRange(changes.Conflicted.Select(x => x.Path));
+                files.AddRange(changes.Renamed.Select(x => x.Path));
                 
                 // Since we have a list of all the files changed between these two commits,
                 // We want to inspect the files on both the old commit and new commit.
@@ -70,23 +101,66 @@ namespace Bulwark.Strategy.CodeOwners.Impl
                     if (!users.Contains(newUser))
                         users.Add(newUser);
                 }
+
+                async Task CheckForCodeOwnerUsers(TreeEntryChanges entryChanges)
+                {
+                    if (Path.GetFileName(entryChanges.Path) == "CODEOWNERS")
+                    {
+                        var diff = repo.Diff.Compare(repo.Lookup<Blob>(entryChanges.OldOid),
+                            repo.Lookup<Blob>(entryChanges.Oid), new CompareOptions
+                            {
+                                ContextLines = 0,
+                                IncludeUnmodified = false
+                            });
+                        if (!diff.IsBinaryComparison)
+                        {
+                            var unifiedConfig = await GetCodeOwnerConfigFromChanges(diff);
+                            foreach (var user in unifiedConfig.Entries.SelectMany(x => x.Users))
+                            {
+                                if (!users.Contains(user))
+                                    users.Add(user);
+                            }
+                        }
+                    }
+                }
+                
+                // In addition to matching users based on path alone, let's look to see if any
+                // CODEOWNERS file was changed, and if so, call out the users that were added/removed.
+                foreach (var modified in changes.Modified)
+                {
+                    await CheckForCodeOwnerUsers(modified);
+                }
+                foreach (var added in changes.Added)
+                {
+                    await CheckForCodeOwnerUsers(added);
+                }
             }
 
             return users.ToList();
         }
 
-        private List<string> GetAffectedFiles(IRepository repo, Tree from, Tree to)
+        public Task<CodeOwnerConfig> GetCodeOwnerConfigFromChanges(ContentChanges changes)
         {
-            var diff = repo.Diff.Compare<TreeChanges>(from, to);
-            var files = new List<string>();
-            files.AddRange(diff.Added.Select(x => x.Path));
-            files.AddRange(diff.Copied.Select(x => x.Path));
-            files.AddRange(diff.Deleted.Select(x => x.Path));
-            files.AddRange(diff.Modified.Select(x => x.Path));
-            files.AddRange(diff.TypeChanged.Select(x => x.Path));
-            files.AddRange(diff.Conflicted.Select(x => x.Path));
-            files.AddRange(diff.Renamed.Select(x => x.Path));
-            return files.Distinct().ToList();
+            var result = new StringBuilder();
+            using (var reader = new StringReader(changes.Patch))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if(line.StartsWith("@")) continue;
+                    
+                    if (line.StartsWith("+"))
+                    {
+                        result.Append(line.Substring(1));
+                    }
+                    else if (line.StartsWith("-"))
+                    {
+                        result.Append(line.Substring(1));
+                    }
+                }
+            }
+
+            return _parser.ParserConfig(result.ToString());
         }
     }
 }
