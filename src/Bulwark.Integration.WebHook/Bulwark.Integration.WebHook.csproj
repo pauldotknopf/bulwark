@@ -53,7 +53,7 @@
     <_ContentIncludedByDefault Remove="wwwroot\lib\jquery\LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Bulwark.GitLab\Bulwark.GitLab.csproj" />
+    <ProjectReference Include="..\Bulwark.Integration.GitLab\Bulwark.Integration.GitLab.csproj" />
     <ProjectReference Include="..\Bulwark.Integration\Bulwark.Integration.csproj" />
   </ItemGroup>
 </Project>

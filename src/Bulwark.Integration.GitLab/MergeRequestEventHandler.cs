@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Bulwark.Integration.Messages;
 
-namespace Bulwark.GitLab
+namespace Bulwark.Integration.GitLab
 {
     public class MergeRequestEventHandler : IMessageHandler<MergeRequestEvent>
     {

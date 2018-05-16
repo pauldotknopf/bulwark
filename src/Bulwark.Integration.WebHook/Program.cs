@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
-namespace Bulwark.WebHook
+namespace Bulwark.Integration.WebHook
 {
     public static class Program
     {

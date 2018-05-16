@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Bulwark.WebHook
+namespace Bulwark.Integration.WebHook
 {
     public class Startup
     {

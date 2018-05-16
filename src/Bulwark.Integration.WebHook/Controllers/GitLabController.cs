@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Net;
+﻿using System.IO;
 using System.Threading.Tasks;
-using Bulwark.GitLab;
+using Bulwark.Integration.GitLab;
 using Bulwark.Integration.Messages;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
-using ServiceStack;
 
-namespace Bulwark.WebHook.Controllers
+namespace Bulwark.Integration.WebHook.Controllers
 {
     public class GitLabController : Controller
     {
