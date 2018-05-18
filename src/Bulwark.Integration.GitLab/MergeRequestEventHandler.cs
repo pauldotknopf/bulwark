@@ -9,6 +9,7 @@ using Bulwark.Integration.Messages;
 using Bulwark.Integration.Repository;
 using Bulwark.Strategy.CodeOwners;
 using LibGit2Sharp;
+using Microsoft.Extensions.Logging;
 using Commit = LibGit2Sharp.Commit;
 
 namespace Bulwark.Integration.GitLab
@@ -18,19 +19,28 @@ namespace Bulwark.Integration.GitLab
         readonly IRepositoryCache _repositoryCache;
         readonly ICodeOwnersChangeset _changeset;
         readonly IGitLabApi _api;
+        readonly ILogger<MergeRequestEventHandler> _logger;
 
         public MergeRequestEventHandler(IRepositoryCache repositoryCache,
             ICodeOwnersChangeset changeset,
-            IGitLabApi api)
+            IGitLabApi api,
+            ILogger<MergeRequestEventHandler> logger)
         {
             _repositoryCache = repositoryCache;
             _changeset = changeset;
             _api = api;
+            _logger = logger;
         }
         
         public async Task Handle(MergeRequestEvent message)
         {
-            await Task.Delay(4);
+            var mergeRequest = await _api.GetMergeRequest(
+                message.MergeRequest.Project.Id,
+                message.MergeRequest.ObjectAttributes.Iid);
+
+            if (mergeRequest.WorkInProgress) return;
+
+            if (mergeRequest.State == "closed") return;
             
             var sourceCloneUrl = message.MergeRequest.ObjectAttributes.Source.GitHttpUrl;
             var targetCloneUrl = message.MergeRequest.ObjectAttributes.Target.GitHttpUrl;
@@ -44,53 +54,106 @@ namespace Bulwark.Integration.GitLab
                 var sourceCommit = repo.Repository.Lookup<Commit>(message.MergeRequest.ObjectAttributes.LastCommit.Id);
                 var targetCommit = repo.Repository.Branches[$"{sourceCloneUrl.GetHashCode():X}/{message.MergeRequest.ObjectAttributes.TargetBranch}"].Tip;
 
-                var users = await _changeset.GetUsersBetweenCommits(targetCommit, sourceCommit);
+                var codeOwnerUsers = await _changeset.GetUsersBetweenCommits(targetCommit, sourceCommit);
 
-                var mergeRequest = await _api.GetMergeRequest(message.MergeRequest.Project.Id, message.MergeRequest.ObjectAttributes.Iid);
-                var mergeRequestApprovals = await _api.GetMergeRequestApprovals(message.MergeRequest.Project.Id, message.MergeRequest.ObjectAttributes.Iid);
+                var mergeRequestApprovals = await _api.GetMergeRequestApprovals(
+                    message.MergeRequest.Project.Id,
+                    message.MergeRequest.ObjectAttributes.Iid);
 
-                var currentApprovers = mergeRequestApprovals.ApprovedBy.Select(x => x.User)
-                    .Union(mergeRequestApprovals.SuggestedApprovers)
+                var userIdLookup = new Dictionary<string, int>();
+
+                var currentApprovers = mergeRequestApprovals.Approvers
+                    .Select(x => x.User)
                     .ToList();
-
-                var toAdd = new List<int>();
-                var toRemove = new List<int>();
                 
-//                // Check for any reviewers to add
-//                foreach (var user in users)
-//                {
-//                    if (currentApprovers.All(x => x.Username != user))
-//                    {
-//                        toAdd.Add(1);
-//                        //toAdd.Add(user);
-//                    }
-//                }
-//                // For check reviewers to remove
-//                foreach (var currentApprover in currentApprovers)
-//                {
-//                    if (!users.Contains(currentApprover))
-//                    {
-//                        toRemove.Add(currentApprover);
-//                    }
-//                }
-//
-//                toAdd = toAdd.Distinct().ToList();
-//                toRemove = toRemove.Distinct().ToList();
-//
-//                if (!toAdd.Any() && !toRemove.Any())
-//                {
-//                    // Pull request is update to date!
-//                    return;
-//                }
-
-                var response = await _api.UpdateMergeRequestAllowApprovers(new UpdateApproversRequest
+                // The author of the pull request will not be added as an approver.
+                // It is assumed that they already approve of the changes.
+                if (codeOwnerUsers.Contains(mergeRequest.Author.Username))
+                    codeOwnerUsers.Remove(mergeRequest.Author.Username);
+                
+                foreach (var approver in currentApprovers)
                 {
-                    ProjectId = message.MergeRequest.Project.Id,
-                    MergeRequestIid = message.MergeRequest.ObjectAttributes.Iid,
-                    ApproverIds = new List<int>{2,3}
-                });
+                    if(!userIdLookup.ContainsKey(approver.Username))
+                        userIdLookup.Add(approver.Username, approver.Id);
+                }
 
-                Debug.WriteLine(response);
+                bool usersChanged = false;
+                foreach (var codeOwnerUser in codeOwnerUsers)
+                {
+                    if (currentApprovers.All(x => x.Username != codeOwnerUser))
+                    {
+                        usersChanged = true;
+                    }
+                }
+                foreach (var currentApprover in currentApprovers)
+                {
+                    if (!codeOwnerUsers.Contains(currentApprover.Username))
+                    {
+                        usersChanged = true;
+                    }
+                }
+
+                if (!usersChanged)
+                {
+                    // No users may have changed, but the approvers request count may be off, ensure it is up to date.
+                    // There may be no changes, but the required approvers count may be off.
+                    if (mergeRequestApprovals.ApprovalsRequired != mergeRequestApprovals.Approvers.Count)
+                    {
+                        await _api.UpdateMergeRequestApprovals(new ChangeApprovalConfigurationRequest
+                        {
+                            ProjectId = message.MergeRequest.Project.Id,
+                            MergeRequestIid = message.MergeRequest.ObjectAttributes.Iid,
+                            ApprovalsRequired = mergeRequestApprovals.Approvers.Count
+                        });
+                    }
+                }
+                else
+                {
+                    // Users need to be updated!
+                    // We need to collect the user ids of all the users to add to the pull request.
+                    foreach (var codeOwnerUser in codeOwnerUsers)
+                    {
+                        if (!userIdLookup.ContainsKey(codeOwnerUser))
+                        {
+                            var users = await _api.GetUsers(new UsersRequest
+                            {
+                                Username = codeOwnerUser
+                            });
+
+                            if (users.Count == 0)
+                            {
+                                _logger.LogError("No user found with {Username}.", codeOwnerUser);
+                                return;
+                            }
+
+                            if (users.Count > 1)
+                            {
+                                _logger.LogError("Multiple users found with {Username}.", codeOwnerUser);
+                                return;
+                            }
+
+                            userIdLookup.Add(users.First().Username, users.First().Id);
+                        }
+                    }
+
+                    mergeRequestApprovals = await _api.UpdateMergeRequestAllowApprovers(new UpdateApproversRequest
+                    {
+                        ProjectId = message.MergeRequest.Project.Id,
+                        MergeRequestIid = message.MergeRequest.ObjectAttributes.Iid,
+                        ApproverIds = codeOwnerUsers.Select(x => userIdLookup[x]).ToList()
+                    });
+                    
+                    // Let's see if we need to update the approver count.
+                    if (mergeRequestApprovals.ApprovalsRequired != mergeRequestApprovals.Approvers.Count)
+                    {
+                        await _api.UpdateMergeRequestApprovals(new ChangeApprovalConfigurationRequest
+                        {
+                            ProjectId = message.MergeRequest.Project.Id,
+                            MergeRequestIid = message.MergeRequest.ObjectAttributes.Iid,
+                            ApprovalsRequired = mergeRequestApprovals.Approvers.Count
+                        });
+                    }
+                }
             }
         }
 

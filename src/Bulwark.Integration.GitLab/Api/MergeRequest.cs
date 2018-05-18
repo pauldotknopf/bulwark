@@ -1,7 +1,87 @@
-﻿namespace Bulwark.Integration.GitLab.Api
+﻿using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
+
+namespace Bulwark.Integration.GitLab.Api
 {
     public class MergeRequest
     {
-        // {"id":4,"iid":3,"project_id":1,"title":"Pull branchdcsd","description":"sdsdflkjjhbsdfsdfsdfkjh","state":"opened","created_at":"2018-05-16T19:51:14.171Z","updated_at":"2018-05-17T11:36:37.465Z","target_branch":"master","source_branch":"pull-branch","upvotes":0,"downvotes":0,"author":{"id":1,"name":"Administrator","username":"root","state":"active","avatar_url":"https://www.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?s=80\u0026d=identicon","web_url":"http://192.168.6.170/root"},"assignee":null,"source_project_id":2,"target_project_id":1,"labels":[],"work_in_progress":false,"milestone":null,"merge_when_build_succeeds":false,"merge_status":"can_be_merged","sha":"5c0f2d81753c3f6607fee42933b4d7fa68cf06e0","merge_commit_sha":null,"subscribed":true,"user_notes_count":0,"approvals_before_merge":null,"should_remove_source_branch":null,"force_remove_source_branch":false,"squash":false,"web_url":"http://192.168.6.170/test-group/test-project/merge_requests/3"}
+        [JsonProperty("id")]
+        public int Id { get; set; }
+        
+        [JsonProperty("iid")]
+        public int Iid { get; set; }
+        
+        [JsonProperty("project_id")]
+        public int ProjectId { get; set; }
+        
+        [JsonProperty("title")]
+        public string Title { get; set; }
+        
+        [JsonProperty("description")]
+        public string Description { get; set; }
+        
+        [JsonProperty("opened")]
+        public string State { get; set; }
+        
+        //[JsonProperty("created_at")]
+        //public DateTime CreatedAt { get; set; }
+        
+        //[JsonProperty("updated_at")]
+        //public DateTime UpdatedAt { get; set; }
+        
+        [JsonProperty("target_branch")]
+        public string TargetBranch { get; set; }
+        
+        [JsonProperty("source_branch")]
+        public string SourceBranch { get; set; }
+        
+        [JsonProperty("upvotes")]
+        public int Upvotes { get; set; }
+        
+        [JsonProperty("downvotes")]
+        public int Downvotes { get; set; }
+        
+        [JsonProperty("author")]
+        public MergeRequestUser Author { get; set; }
+        
+        [JsonProperty("assignee")]
+        public MergeRequestUser Assignee { get; set; }
+        
+        [JsonProperty("source_project_id")]
+        public int SourceProjectId { get; set; }
+        
+        [JsonProperty("target_project_id")]
+        public int TargetProjectId { get; set; }
+        
+        [JsonProperty("labels")]
+        public List<string> Labels { get; set; }
+        
+        [JsonProperty("work_in_progress")]
+        public bool WorkInProgress { get; set; }
+        
+        [JsonProperty("milestone")]
+        public Milestone Milestone { get; set; }
+        
+        [JsonProperty("merge_when_build_succeeds")]
+        public bool MergeWhenBuildSucceeds { get; set; }
+        
+        [JsonProperty("merge_status")]
+        public string MergeStatus { get; set; }
+        
+        [JsonProperty("sha")]
+        public string Sha { get; set; }
+        
+        [JsonProperty("merge_commit_sha")]
+        public string MergeCommitSha { get; set; }
+        
+        [JsonProperty("subscribed")]
+        public bool Subscribed { get; set; }
+        
+        [JsonProperty("user_notes_count")]
+        public int UserNotesCount { get; set; }
+        
+        [JsonProperty("approvals_before_merge")]
+        public int? ApprovalsBeforeMerge { get; set; }
     }
 }

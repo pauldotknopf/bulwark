@@ -9,6 +9,10 @@ namespace Bulwark.Integration.GitLab.Api
 
         Task<MergeRequestApprovals> GetMergeRequestApprovals(int projectId, int mergeRequestIid);
 
+        Task<ChangeApprovalConfigurationResponse> UpdateMergeRequestApprovals(ChangeApprovalConfigurationRequest request);
+        
         Task<UpdateApproversResponse> UpdateMergeRequestAllowApprovers(UpdateApproversRequest request);
+
+        Task<List<User>> GetUsers(UsersRequest request);
     }
 }

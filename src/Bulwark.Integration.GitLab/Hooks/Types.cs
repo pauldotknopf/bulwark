@@ -226,6 +226,6 @@ namespace Bulwark.Integration.GitLab.Hooks
         public string Type { get; set; }
         
         [JsonProperty("group_id")]
-        public int GroupId { get; set; }
+        public int? GroupId { get; set; }
     }
 }

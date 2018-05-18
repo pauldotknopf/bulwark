@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -30,6 +31,13 @@ namespace Bulwark.Integration.GitLab.Api.Impl
             return Get<MergeRequestApprovals>($"/api/v4/projects/{projectId}/merge_requests/{mergeRequestIid}/approvals");
         }
 
+        public Task<ChangeApprovalConfigurationResponse> UpdateMergeRequestApprovals(ChangeApprovalConfigurationRequest request)
+        {
+            return Post<ChangeApprovalConfigurationResponse>(
+                $"/api/v4/projects/{request.ProjectId}/merge_requests/{request.MergeRequestIid}/approvals",
+                request);
+        }
+
         public Task<UpdateApproversResponse> UpdateMergeRequestAllowApprovers(UpdateApproversRequest request)
         {
             return Put<UpdateApproversResponse>(
@@ -37,6 +45,44 @@ namespace Bulwark.Integration.GitLab.Api.Impl
                 request);
         }
 
+        public Task<List<User>> GetUsers(UsersRequest request)
+        {
+            var url = "/api/v4/users";
+            
+            var query = HttpUtility.ParseQueryString(string.Empty);
+            if (!string.IsNullOrEmpty(request.Username))
+                query["username"] = request.Username;
+
+            if (query.Count > 0)
+            {
+                url += $"?{query}";
+            }
+            
+            return Get<List<User>>(url);
+        }
+
+        private async Task<T> Post<T>(string url, object data)
+        {
+            using (var client = GetClient())
+            {
+                using (var input = new StringContent(
+                    JsonConvert.SerializeObject(data),
+                    Encoding.UTF8,
+                    "application/json"))
+                {
+                    using (var response = await client.PostAsync(url, input))
+                    {
+                        using (var output = response.Content)
+                        {
+                            var json = await output.ReadAsStringAsync();
+                            Debug.WriteLine(json);
+                            return JsonConvert.DeserializeObject<T>(json);
+                        }
+                    }
+                }
+            }
+        }
+        
         private async Task<T> Put<T>(string url, object data)
         {
             using (var client = GetClient())

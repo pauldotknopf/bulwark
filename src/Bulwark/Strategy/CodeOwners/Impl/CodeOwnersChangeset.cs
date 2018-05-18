@@ -184,11 +184,11 @@ namespace Bulwark.Strategy.CodeOwners.Impl
                     
                     if (line.StartsWith("+"))
                     {
-                        result.Append(line.Substring(1));
+                        result.AppendLine(line.Substring(1));
                     }
                     else if (line.StartsWith("-"))
                     {
-                        result.Append(line.Substring(1));
+                        result.AppendLine(line.Substring(1));
                     }
                 }
             }
