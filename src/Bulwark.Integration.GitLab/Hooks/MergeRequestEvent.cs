@@ -1,6 +1,4 @@
-﻿using Bulwark.Integration.GitLab.Api;
-
-namespace Bulwark.Integration.GitLab
+﻿namespace Bulwark.Integration.GitLab.Hooks
 {
     public class MergeRequestEvent
     {

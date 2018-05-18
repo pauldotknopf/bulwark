@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Bulwark.Integration.GitLab.Api
+namespace Bulwark.Integration.GitLab.Hooks
 {
     public class User
     {

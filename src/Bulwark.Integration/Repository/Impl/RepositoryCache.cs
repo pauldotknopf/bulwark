@@ -48,7 +48,7 @@ namespace Bulwark.Integration.Repository.Impl
             
             public void Dispose()
             {
-                throw new System.NotImplementedException();
+                Repository.Dispose();
             }
         }
     }
