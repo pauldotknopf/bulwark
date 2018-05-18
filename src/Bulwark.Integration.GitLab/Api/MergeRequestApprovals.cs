@@ -28,7 +28,7 @@ namespace Bulwark.Integration.GitLab.Api
         //public DateTime UpdatedAt { get; set; }
         
         [JsonProperty("merge_status")]
-        public string MergeStatus { get; set; }
+        public MergeStatus MergeStatus { get; set; }
         
         [JsonProperty("approvals_required")]
         public int ApprovalsRequired { get; set; }

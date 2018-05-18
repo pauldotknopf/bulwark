@@ -52,7 +52,7 @@ namespace Bulwark.Integration.GitLab
                     await FetchRemote(repo.Repository,  $"{sourceCloneUrl.GetHashCode():X}", sourceCloneUrl);
 
                 var sourceCommit = repo.Repository.Lookup<Commit>(message.MergeRequest.ObjectAttributes.LastCommit.Id);
-                var targetCommit = repo.Repository.Branches[$"{sourceCloneUrl.GetHashCode():X}/{message.MergeRequest.ObjectAttributes.TargetBranch}"].Tip;
+                var targetCommit = repo.Repository.Branches[$"{targetCloneUrl.GetHashCode():X}/{message.MergeRequest.ObjectAttributes.TargetBranch}"].Tip;
 
                 var codeOwnerUsers = await _changeset.GetUsersBetweenCommits(targetCommit, sourceCommit);
 

@@ -67,7 +67,7 @@ namespace Bulwark.Integration.GitLab.Api
         public bool MergeWhenBuildSucceeds { get; set; }
         
         [JsonProperty("merge_status")]
-        public string MergeStatus { get; set; }
+        public MergeStatus MergeStatus { get; set; }
         
         [JsonProperty("sha")]
         public string Sha { get; set; }

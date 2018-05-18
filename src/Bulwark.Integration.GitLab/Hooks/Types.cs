@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Bulwark.Integration.GitLab.Api;
 using Newtonsoft.Json;
 
 namespace Bulwark.Integration.GitLab.Hooks
@@ -136,7 +137,7 @@ namespace Bulwark.Integration.GitLab.Hooks
         public string State { get; set; }
         
         [JsonProperty("merge_status")]
-        public string MergeStatus { get; set; }
+        public MergeStatus MergeStatus { get; set; }
         
         [JsonProperty("target_project_id")]
         public int TargetProjectId { get; set; }
