@@ -1,11 +1,13 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Bulwark.Integration.GitLab;
 using Bulwark.Integration.GitLab.Api.Hooks;
 using Bulwark.Integration.GitLab.Events;
 using Bulwark.Integration.Messages;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 

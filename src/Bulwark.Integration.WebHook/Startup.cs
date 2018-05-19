@@ -1,4 +1,5 @@
-﻿using Bulwark.Integration.Messages;
+﻿using Bulwark.Integration.GitLab;
+using Bulwark.Integration.Messages;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +19,9 @@ namespace Bulwark.Integration.WebHook
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<GitLabOptions>(Configuration.GetSection("GitLab"));
+            services.Configure<RepositoryCacheOptions>(Configuration.GetSection("RepositoryCache"));
+            
             services.AddMvc();
             // ReSharper disable RedundantNameQualifier
             Bulwark.Services.Register(services);

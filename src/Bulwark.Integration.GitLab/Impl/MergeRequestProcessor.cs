@@ -188,7 +188,11 @@ namespace Bulwark.Integration.GitLab.Impl
                         await _api.AcceptMergeRequest(new AcceptMergeRequestRequest
                         {
                             ProjectId = mergeRequest.ProjectId,
-                            MergeRequestIid = mergeRequest.Iid
+                            MergeRequestIid = mergeRequest.Iid,
+                            Sha = mergeRequest.Sha, // This is to ensure we are merging what we expect.
+                            MergeCommitMessage = _options.MergeCommitMessage,
+                            MergeWhenPipelineSuceeds = _options.MergeWhenPipelineSuceeds,
+                            ShouldRemoveSourceBranch = _options.ShouldRemoveSourceBranch
                         });
                     }
                 }
