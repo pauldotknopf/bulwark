@@ -1,7 +1,8 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using Bulwark.Integration.GitLab.Hooks;
+using Bulwark.Integration.GitLab.Api.Hooks;
+using Bulwark.Integration.GitLab.Events;
 using Bulwark.Integration.Messages;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -32,8 +33,15 @@ namespace Bulwark.Integration.WebHook.Controllers
 
             switch (eventType)
             {
+                case "Push Hook":
+                    var push = await DeserializeBody<PushHook>();
+                    await _messageSender.Send(new PushEvent
+                    {
+                        Push = push
+                    });
+                    return Ok();
                 case "Merge Request Hook":
-                    var mergeRequest = await DeserializeBody<MergeRequest>();
+                    var mergeRequest = await DeserializeBody<MergeRequestHook>();
                     await _messageSender.Send(new MergeRequestEvent
                     {
                         MergeRequest = mergeRequest

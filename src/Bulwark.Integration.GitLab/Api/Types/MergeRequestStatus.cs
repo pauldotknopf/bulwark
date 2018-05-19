@@ -2,10 +2,10 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace Bulwark.Integration.GitLab.Api
+namespace Bulwark.Integration.GitLab.Api.Types
 {
     [JsonConverter(typeof(StringEnumConverter))]
-    public enum MergeStatus
+    public enum MergeRequestStatus
     {
         [EnumMember(Value="cannot_be_merged")]
         CannotBeMerged,

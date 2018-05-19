@@ -7,6 +7,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Bulwark.Integration.GitLab.Api.Requests;
+using Bulwark.Integration.GitLab.Api.Types;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -19,6 +21,16 @@ namespace Bulwark.Integration.GitLab.Api.Impl
         public GitLabApi(IOptions<GitLabOptions> options)
         {
             _options = options.Value;
+        }
+
+        public Task<MergeRequestsResponse> GetMergeRequests(MergeRequestsRequest request)
+        {
+            var queryParameters = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(request));
+            return Get<MergeRequestsResponse>(
+                request.ProjectId.HasValue ? 
+                    $"/api/v4/projects/{request.ProjectId}/merge_requests" : 
+                    "/api/v4/merge_requests",
+                queryParameters);
         }
         
         public Task<MergeRequest> GetMergeRequest(int projectId, int mergeRequestIid)
@@ -59,6 +71,11 @@ namespace Bulwark.Integration.GitLab.Api.Impl
             }
             
             return Get<List<User>>(url);
+        }
+
+        public Task<ProjectResponse> GetProject(ProjectRequest request)
+        {
+            return Get<ProjectResponse>($"/api/v4/projects/{request.ProjectId}");
         }
 
         private async Task<T> Post<T>(string url, object data)
@@ -105,8 +122,19 @@ namespace Bulwark.Integration.GitLab.Api.Impl
             }
         }
         
-        private async Task<T> Get<T>(string url)
+        private async Task<T> Get<T>(string url, Dictionary<string, string> queryParameters = null)
         {
+            if (queryParameters != null && queryParameters.Count > 0)
+            {
+                var q = HttpUtility.ParseQueryString(string.Empty);
+                foreach (var entry in queryParameters)
+                {
+                    q.Add(entry.Key, entry.Value);
+                }
+
+                url += $"?{q}";
+            }
+            
             using (var client = GetClient())
             {
                 using (var response = await client.GetAsync(url))

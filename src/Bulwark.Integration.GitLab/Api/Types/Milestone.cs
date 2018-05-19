@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace Bulwark.Integration.GitLab.Api
+namespace Bulwark.Integration.GitLab.Api.Types
 {
     public class Milestone
     {

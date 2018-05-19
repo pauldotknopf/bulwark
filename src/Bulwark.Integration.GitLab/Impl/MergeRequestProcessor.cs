@@ -1,64 +1,63 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Bulwark.Integration.GitLab.Api;
-using Bulwark.Integration.GitLab.Hooks;
-using Bulwark.Integration.Messages;
+using Bulwark.Integration.GitLab.Api.Requests;
+using Bulwark.Integration.GitLab.Api.Types;
 using Bulwark.Integration.Repository;
 using Bulwark.Strategy.CodeOwners;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
-using Commit = LibGit2Sharp.Commit;
 
-namespace Bulwark.Integration.GitLab
+namespace Bulwark.Integration.GitLab.Impl
 {
-    public class MergeRequestEventHandler : IMessageHandler<MergeRequestEvent>
+    public class MergeRequestProcessor : IMergeRequestProcessor
     {
+        readonly ILogger<MergeRequestProcessor> _logger;
+        readonly IGitLabApi _api;
         readonly IRepositoryCache _repositoryCache;
         readonly ICodeOwnersChangeset _changeset;
-        readonly IGitLabApi _api;
-        readonly ILogger<MergeRequestEventHandler> _logger;
 
-        public MergeRequestEventHandler(IRepositoryCache repositoryCache,
+        public MergeRequestProcessor(IGitLabApi api,
+            IRepositoryCache repositoryCache,
             ICodeOwnersChangeset changeset,
-            IGitLabApi api,
-            ILogger<MergeRequestEventHandler> logger)
+            ILogger<MergeRequestProcessor> logger)
         {
+            _api = api;
             _repositoryCache = repositoryCache;
             _changeset = changeset;
-            _api = api;
             _logger = logger;
         }
         
-        public async Task Handle(MergeRequestEvent message)
+        public async Task ProcessMergeRequest(int projectId, int mergeRequestIid)
         {
-            var mergeRequest = await _api.GetMergeRequest(
-                message.MergeRequest.Project.Id,
-                message.MergeRequest.ObjectAttributes.Iid);
+            var mergeRequest = await _api.GetMergeRequest(projectId, mergeRequestIid);
 
             if (mergeRequest.WorkInProgress) return;
 
-            if (mergeRequest.State == "closed") return;
-            
-            var sourceCloneUrl = message.MergeRequest.ObjectAttributes.Source.GitHttpUrl;
-            var targetCloneUrl = message.MergeRequest.ObjectAttributes.Target.GitHttpUrl;
+            if (mergeRequest.State != MergeRequestState.Opened) return;
 
-            using (var repo = await _repositoryCache.GetDirectoryForRepo(message.MergeRequest.ObjectAttributes.Target.Id.ToString()))
+            var targetProject = await _api.GetProject(new ProjectRequest {ProjectId = mergeRequest.TargetProjectId});
+            var sourceProject = targetProject.Id == mergeRequest.SourceProjectId
+                ? targetProject
+                : await _api.GetProject(new ProjectRequest {ProjectId = mergeRequest.SourceProjectId});
+            
+            var sourceCloneUrl = sourceProject.HttpUrlToRepo;
+            var targetCloneUrl = targetProject.HttpUrlToRepo;
+
+            using (var repo = await _repositoryCache.GetDirectoryForRepo(mergeRequest.Id.ToString()))
             {
                 await FetchRemote(repo.Repository, $"{targetCloneUrl.GetHashCode():X}", targetCloneUrl);
                 if (!targetCloneUrl.Equals(sourceCloneUrl, StringComparison.OrdinalIgnoreCase))
                     await FetchRemote(repo.Repository,  $"{sourceCloneUrl.GetHashCode():X}", sourceCloneUrl);
 
-                var sourceCommit = repo.Repository.Lookup<Commit>(message.MergeRequest.ObjectAttributes.LastCommit.Id);
-                var targetCommit = repo.Repository.Branches[$"{targetCloneUrl.GetHashCode():X}/{message.MergeRequest.ObjectAttributes.TargetBranch}"].Tip;
+                var sourceCommit = repo.Repository.Lookup<LibGit2Sharp.Commit>(mergeRequest.Sha);
+                var targetCommit = repo.Repository.Branches[$"{targetCloneUrl.GetHashCode():X}/{mergeRequest.TargetBranch}"].Tip;
 
                 var codeOwnerUsers = await _changeset.GetUsersBetweenCommits(targetCommit, sourceCommit);
 
-                var mergeRequestApprovals = await _api.GetMergeRequestApprovals(
-                    message.MergeRequest.Project.Id,
-                    message.MergeRequest.ObjectAttributes.Iid);
+                var mergeRequestApprovals = await _api.GetMergeRequestApprovals(mergeRequest.ProjectId, mergeRequest.Iid);
 
                 var userIdLookup = new Dictionary<string, int>();
 
@@ -99,10 +98,10 @@ namespace Bulwark.Integration.GitLab
                     // There may be no changes, but the required approvers count may be off.
                     if (mergeRequestApprovals.ApprovalsRequired != mergeRequestApprovals.Approvers.Count)
                     {
-                        await _api.UpdateMergeRequestApprovals(new ChangeApprovalConfigurationRequest
+                        mergeRequestApprovals = await _api.UpdateMergeRequestApprovals(new ChangeApprovalConfigurationRequest
                         {
-                            ProjectId = message.MergeRequest.Project.Id,
-                            MergeRequestIid = message.MergeRequest.ObjectAttributes.Iid,
+                            ProjectId = mergeRequest.ProjectId,
+                            MergeRequestIid = mergeRequest.Iid,
                             ApprovalsRequired = mergeRequestApprovals.Approvers.Count
                         });
                     }
@@ -138,25 +137,30 @@ namespace Bulwark.Integration.GitLab
 
                     mergeRequestApprovals = await _api.UpdateMergeRequestAllowApprovers(new UpdateApproversRequest
                     {
-                        ProjectId = message.MergeRequest.Project.Id,
-                        MergeRequestIid = message.MergeRequest.ObjectAttributes.Iid,
+                        ProjectId = mergeRequest.ProjectId,
+                        MergeRequestIid = mergeRequest.Iid,
                         ApproverIds = codeOwnerUsers.Select(x => userIdLookup[x]).ToList()
                     });
                     
                     // Let's see if we need to update the approver count.
                     if (mergeRequestApprovals.ApprovalsRequired != mergeRequestApprovals.Approvers.Count)
                     {
-                        await _api.UpdateMergeRequestApprovals(new ChangeApprovalConfigurationRequest
+                        mergeRequestApprovals = await _api.UpdateMergeRequestApprovals(new ChangeApprovalConfigurationRequest
                         {
-                            ProjectId = message.MergeRequest.Project.Id,
-                            MergeRequestIid = message.MergeRequest.ObjectAttributes.Iid,
+                            ProjectId = mergeRequest.ProjectId,
+                            MergeRequestIid = mergeRequest.Iid,
                             ApprovalsRequired = mergeRequestApprovals.Approvers.Count
                         });
                     }
                 }
+
+                if (mergeRequestApprovals.ApprovalsLeft == 0)
+                {
+                    // We have no more approvals, let's merge this merge request.2
+                }
             }
         }
-
+        
         private Task FetchRemote(IRepository repo, string remoteName, string remoteUrl)
         {
             return Task.Run(() =>

@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Bulwark.Integration.GitLab.Api
+namespace Bulwark.Integration.GitLab.Api.Types
 {
     public class MergeRequestApprovals
     {
@@ -19,7 +18,7 @@ namespace Bulwark.Integration.GitLab.Api
         public string Description { get; set; }
         
         [JsonProperty("state")]
-        public string State { get; set; }
+        public MergeRequestState State { get; set; }
         
         //[JsonProperty("created_at")]
         //public DateTime CreatedAt { get; set; }
@@ -28,7 +27,7 @@ namespace Bulwark.Integration.GitLab.Api
         //public DateTime UpdatedAt { get; set; }
         
         [JsonProperty("merge_status")]
-        public MergeStatus MergeStatus { get; set; }
+        public MergeRequestStatus MergeStatus { get; set; }
         
         [JsonProperty("approvals_required")]
         public int ApprovalsRequired { get; set; }

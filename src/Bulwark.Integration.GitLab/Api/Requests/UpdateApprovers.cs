@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using Bulwark.Integration.GitLab.Api.Types;
 using Newtonsoft.Json;
 
-namespace Bulwark.Integration.GitLab.Api
+namespace Bulwark.Integration.GitLab.Api.Requests
 {
     public class UpdateApproversRequest
     {
