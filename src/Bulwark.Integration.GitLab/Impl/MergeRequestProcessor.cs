@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Bulwark.Integration.GitLab.Api;
 using Bulwark.Integration.GitLab.Api.Requests;
@@ -9,12 +10,14 @@ using Bulwark.Integration.Repository;
 using Bulwark.Strategy.CodeOwners;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Bulwark.Integration.GitLab.Impl
 {
     public class MergeRequestProcessor : IMergeRequestProcessor
     {
         readonly ILogger<MergeRequestProcessor> _logger;
+        readonly GitLabOptions _options;
         readonly IGitLabApi _api;
         readonly IRepositoryCache _repositoryCache;
         readonly ICodeOwnersChangeset _changeset;
@@ -22,12 +25,14 @@ namespace Bulwark.Integration.GitLab.Impl
         public MergeRequestProcessor(IGitLabApi api,
             IRepositoryCache repositoryCache,
             ICodeOwnersChangeset changeset,
-            ILogger<MergeRequestProcessor> logger)
+            ILogger<MergeRequestProcessor> logger,
+            IOptions<GitLabOptions> options)
         {
             _api = api;
             _repositoryCache = repositoryCache;
             _changeset = changeset;
             _logger = logger;
+            _options = options.Value;
         }
         
         public async Task ProcessMergeRequest(int projectId, int mergeRequestIid)
@@ -38,6 +43,16 @@ namespace Bulwark.Integration.GitLab.Impl
 
             if (mergeRequest.State != MergeRequestState.Opened) return;
 
+            // Let's see if this is a merge request that we should listen too.
+            if (!string.IsNullOrEmpty(_options.TargetBranchesFilter))
+            {
+                if (!Regex.IsMatch(mergeRequest.TargetBranch, _options.TargetBranchesFilter))
+                {
+                    _logger.LogDebug("Skipping {TargetBranch} due to filter.", mergeRequest.TargetBranch);
+                    return;
+                }
+            }
+            
             var targetProject = await _api.GetProject(new ProjectRequest {ProjectId = mergeRequest.TargetProjectId});
             var sourceProject = targetProject.Id == mergeRequest.SourceProjectId
                 ? targetProject
@@ -154,7 +169,7 @@ namespace Bulwark.Integration.GitLab.Impl
                     }
                 }
 
-                if (mergeRequestApprovals.ApprovalsLeft == 0)
+                if (_options.AutoMergePullRequests && mergeRequestApprovals.ApprovalsLeft == 0)
                 {
                     // We have no more approvals, let's merge this merge request.
                     // But first, let's make sure that the approvers are on the required list.
