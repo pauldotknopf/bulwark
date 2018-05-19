@@ -43,6 +43,13 @@ namespace Bulwark.Integration.GitLab.Api.Impl
             return Get<MergeRequestApprovals>($"/api/v4/projects/{projectId}/merge_requests/{mergeRequestIid}/approvals");
         }
 
+        public Task<AcceptMergeRequestResponse> AcceptMergeRequest(AcceptMergeRequestRequest request)
+        {
+            return Put<AcceptMergeRequestResponse>(
+                $"/api/v4/projects/{request.ProjectId}/merge_requests/{request.MergeRequestIid}/merge",
+                request);
+        }
+
         public Task<ChangeApprovalConfigurationResponse> UpdateMergeRequestApprovals(ChangeApprovalConfigurationRequest request)
         {
             return Post<ChangeApprovalConfigurationResponse>(

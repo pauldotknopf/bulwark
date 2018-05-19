@@ -156,7 +156,26 @@ namespace Bulwark.Integration.GitLab.Impl
 
                 if (mergeRequestApprovals.ApprovalsLeft == 0)
                 {
-                    // We have no more approvals, let's merge this merge request.2
+                    // We have no more approvals, let's merge this merge request.
+                    // But first, let's make sure that the approvers are on the required list.
+                    bool allApproved = true;
+                    foreach (var user in codeOwnerUsers)
+                    {
+                        if (!mergeRequestApprovals.ApprovedBy.Any(x => x.User != null && x.User.Username == user))
+                        {
+                            allApproved = false;
+                        }
+                    }
+
+                    if (allApproved)
+                    {
+                        // This MR can be merged!
+                        await _api.AcceptMergeRequest(new AcceptMergeRequestRequest
+                        {
+                            ProjectId = mergeRequest.ProjectId,
+                            MergeRequestIid = mergeRequest.Iid
+                        });
+                    }
                 }
             }
         }
