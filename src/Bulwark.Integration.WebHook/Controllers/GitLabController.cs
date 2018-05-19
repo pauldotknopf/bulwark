@@ -17,12 +17,15 @@ namespace Bulwark.Integration.WebHook.Controllers
     {
         readonly ILogger<GitLabController> _logger;
         readonly IMessageSender _messageSender;
+        readonly IOptions<GitLabOptions> _options;
 
         public GitLabController(ILogger<GitLabController> logger,
-            IMessageSender messageSender)
+            IMessageSender messageSender,
+            IOptions<GitLabOptions> options)
         {
             _logger = logger;
             _messageSender = messageSender;
+            _options = options;
         }
         
         public async Task<ActionResult> Index()

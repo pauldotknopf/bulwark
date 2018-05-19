@@ -190,7 +190,11 @@ namespace Bulwark.Integration.GitLab.Impl
                             ProjectId = mergeRequest.ProjectId,
                             MergeRequestIid = mergeRequest.Iid,
                             Sha = mergeRequest.Sha, // This is to ensure we are merging what we expect.
-                            MergeCommitMessage = _options.MergeCommitMessage,
+                            // Passing null when empty ensures field won't get sent to GitLab, ensuring
+                            // it will use the default commit message, instead of an empty one.
+                            MergeCommitMessage = string.IsNullOrEmpty(_options.MergeCommitMessage) 
+                                ? null 
+                                : _options.MergeCommitMessage,
                             MergeWhenPipelineSuceeds = _options.MergeWhenPipelineSuceeds,
                             ShouldRemoveSourceBranch = _options.ShouldRemoveSourceBranch
                         });
