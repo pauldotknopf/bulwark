@@ -3,7 +3,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Bulwark\Bulwark.csproj" />
+    <ProjectReference Include="..\..\Bulwark\Bulwark.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="DiskQueue" Version="1.1.0" />

@@ -8,11 +8,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{4C69DC2C-1
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bulwark.Tests", "test\Bulwark.Tests\Bulwark.Tests.csproj", "{F98B7581-4015-4879-9BC7-84AD96F93284}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bulwark.Integration", "src\Bulwark.Integration\Bulwark.Integration.csproj", "{7B397A29-23D9-4E42-A751-EF6E61737721}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bulwark.Integration", "src\integration\Bulwark.Integration\Bulwark.Integration.csproj", "{7B397A29-23D9-4E42-A751-EF6E61737721}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bulwark.Integration.GitLab", "src\Bulwark.Integration.GitLab\Bulwark.Integration.GitLab.csproj", "{76E9A01F-293A-42F0-BDAB-DE28D047E091}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bulwark.Integration.GitLab", "src\integration\Bulwark.Integration.GitLab\Bulwark.Integration.GitLab.csproj", "{76E9A01F-293A-42F0-BDAB-DE28D047E091}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bulwark.Integration.WebHook", "src\Bulwark.Integration.WebHook\Bulwark.Integration.WebHook.csproj", "{2E06C4F3-0430-4BB6-B37B-56B08FADD55D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bulwark.Integration.WebHook", "src\integration\Bulwark.Integration.WebHook\Bulwark.Integration.WebHook.csproj", "{2E06C4F3-0430-4BB6-B37B-56B08FADD55D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integration", "integration", "{67C5B1B8-CC48-4E93-93C4-E47164654843}"
 EndProject
