@@ -40,9 +40,9 @@ namespace Bulwark.Integration.Messages.Impl
             return _innerSender.Send(message);
         }
 
-        public Task Run(CancellationToken token)
+        public IDisposable Run()
         {
-            return _innerRunner.Run(token);
+            return _innerRunner.Run();
         }
 
         public void RegisterMessage<T>() where T : class

@@ -31,26 +31,12 @@ namespace Bulwark.Integration.Messages.Impl
             });
         }
 
-        public async Task Run(CancellationToken token)
+        public IDisposable Run()
         {
             // Get all registered handlers
             _server.Start();
             
-            // Wait for a cancellation request
-            var tcs = new TaskCompletionSource<object>();
-            IDisposable subscription = null;
-            subscription = token.Register(() =>
-            {
-                tcs.SetResult(null);
-                // ReSharper disable once PossibleNullReferenceException
-                // ReSharper disable once AccessToModifiedClosure
-                subscription.Dispose();
-            });
-            await tcs.Task;
-            
-            // We are stopping, shutdown the processing of messages.
-            _server.Stop();
-            _server.WaitForWorkersToStop();
+            return new RabbitRunner(_server);
         }
 
         public void RegisterMessage<T>() where T : class
@@ -65,6 +51,23 @@ namespace Bulwark.Integration.Messages.Impl
 
                 return null;
             });
+        }
+
+        class RabbitRunner : IDisposable
+        {
+            private readonly RabbitMqServer _server;
+
+            public RabbitRunner(RabbitMqServer server)
+            {
+                _server = server;
+            }
+            
+            public void Dispose()
+            {
+                // We are stopping, shutdown the processing of messages, wait for finish.
+                _server.Stop();
+                _server.WaitForWorkersToStop();
+            }
         }
     }
 }

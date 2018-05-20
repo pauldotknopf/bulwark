@@ -42,24 +42,23 @@ namespace Bulwark.Integration.Messages.Impl
             return Task.CompletedTask;
         }
 
-        public async Task Run(CancellationToken token)
+        public IDisposable Run()
         {
-            // Wait for a cancellation request
-            var tcs = new TaskCompletionSource<object>();
-            IDisposable subscription = null;
-            subscription = token.Register(() =>
-            {
-                tcs.SetResult(null);
-                // ReSharper disable once PossibleNullReferenceException
-                // ReSharper disable once AccessToModifiedClosure
-                subscription.Dispose();
-            });
-            await tcs.Task;
+            Console.WriteLine("Starting in memory runner...");
+            return new InMemoryRunner();
         }
 
         public void RegisterMessage<T>() where T : class
         {
             // Not needed.
+        }
+
+        class InMemoryRunner : IDisposable
+        {
+            public void Dispose()
+            {
+                Console.WriteLine("Finished in memory runner");
+            }
         }
     }
 }
