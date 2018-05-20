@@ -17,16 +17,25 @@ namespace Bulwark.Integration.WebHook.Controllers
     {
         readonly ILogger<GitLabController> _logger;
         readonly IMessageSender _messageSender;
+        readonly GitLabOptions _options;
 
         public GitLabController(ILogger<GitLabController> logger,
-            IMessageSender messageSender)
+            IMessageSender messageSender,
+            IOptions<GitLabOptions> options)
         {
             _logger = logger;
             _messageSender = messageSender;
+            _options = options.Value;
         }
         
         public async Task<ActionResult> Index()
         {
+            if (!_options.Enabled)
+            {
+                _logger.LogWarning("A GitLab hook request was recieved, but isn't enabled.");
+                return BadRequest();
+            }
+            
             string eventType = null;
             if (Request.Headers.TryGetValue("X-Gitlab-Event", out StringValues temp))
             {
