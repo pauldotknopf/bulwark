@@ -21,6 +21,15 @@ namespace Bulwark.Integration.GitLab.Api.Impl
         public GitLabApi(IOptions<GitLabOptions> options)
         {
             _options = options.Value;
+            if (string.IsNullOrEmpty(_options.ServerUrl))
+            {
+                throw new Exception("You must provide a GitLab server url.");
+            }
+
+            if (string.IsNullOrEmpty(_options.AuthenticationToken))
+            {
+                throw new Exception("You must provide a GitLab authentication token.");
+            }
         }
 
         public Task<MergeRequestsResponse> GetMergeRequests(MergeRequestsRequest request)
