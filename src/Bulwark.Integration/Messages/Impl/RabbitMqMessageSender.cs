@@ -30,17 +30,18 @@ namespace Bulwark.Integration.Messages.Impl
             
             _bus = Bus.Factory.CreateUsingRabbitMq(sbc =>
             {
-                sbc.Host(new Uri($"rabbitmq://{messageQueueOptions.Value.RabbitMqHost}"), h =>
+                var value = messageQueueOptions.Value;
+                sbc.Host(new Uri($"rabbitmq://{value.RabbitMqHost}"), h =>
                 {
-                    h.Username(messageQueueOptions.Value.RabbitMqUsername);
-                    h.Password(messageQueueOptions.Value.RabbitMqPassword);
+                    h.Username(value.RabbitMqUsername);
+                    h.Password(value.RabbitMqPassword);
                 });
             });
         }
 
         public async Task Send<T>(T message) where T : class
         {
-            _logger.LogInformation($"Pushing message {message.GetType().Name}");
+            _logger.LogInformation($"Pushing message {typeof(T).Name}");
 
             var endpoint = await _bus.GetSendEndpoint(new Uri($"rabbitmq://{_messageQueueOptions.Value.RabbitMqHost}/work_queue"));
             await endpoint.Send(message);
@@ -80,6 +81,7 @@ namespace Bulwark.Integration.Messages.Impl
         {
             ep.Handler<T>(async context =>
             {
+                _logger.LogInformation($"Handling message {typeof(T).Name}");
                 using (var scope = _serviceScopeFactory.CreateScope())
                 {
                     await scope.ServiceProvider.GetRequiredService<IMessageHandler<T>>().Handle(context.Message);
