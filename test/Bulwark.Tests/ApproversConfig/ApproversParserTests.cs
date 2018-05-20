@@ -5,6 +5,8 @@ using Bulwark.Strategy.ApproversConfig;
 using Bulwark.Strategy.ApproversConfig.Impl;
 using Xunit;
 
+#pragma warning disable xUnit2000
+
 namespace Bulwark.Tests.ApproversConfig
 {
     public class ApproversParserTests

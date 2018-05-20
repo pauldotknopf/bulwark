@@ -77,13 +77,7 @@ $@"<Project>
                     if(Travis.Branch != "master")
                     {
                         // We aren't on master.
-                        // The only time we also auto-publish
-                        // is if this is a beta build.
-                        if(gitversion.PreReleaseLabel != "beta")
-                        {
-                            Log.Warning("Not on master or beta build, skipping publish...");
-                            return;
-                        }
+                        Log.Warning("Not on master, skipping publish...");
                     }
                 }
 
@@ -111,7 +105,7 @@ $@"<Project>
         // ReSharper restore ClassNeverInstantiated.Local
         {
             [PowerArgs.ArgShortcut("config"), PowerArgs.ArgDefaultValue("Release")]
-            public string Configuration { get; set; }
+            public string Configuration => null;
         }
     }
 }

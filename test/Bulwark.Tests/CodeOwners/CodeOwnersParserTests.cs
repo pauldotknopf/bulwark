@@ -3,7 +3,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Bulwark.Strategy.CodeOwners;
 using Bulwark.Strategy.CodeOwners.Impl;
-using FluentAssert;
 using Xunit;
 
 namespace Bulwark.Tests.CodeOwners

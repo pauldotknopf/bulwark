@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
 using Bulwark.FileSystem;
-using FluentAssert;
 using LibGit2Sharp;
-using Microsoft.Extensions.FileProviders;
 using Xunit;
 
 namespace Bulwark.Tests
