@@ -15,6 +15,9 @@ namespace Bulwark.Integration.WebHook
         public WorkerService(IMessageRunner messageRunner)
         {
             _messageRunner = messageRunner;
+            _messageRunner.RegisterMessage<GitLab.Events.MergeRequestEvent>();
+            _messageRunner.RegisterMessage<GitLab.Events.UpdateMergeRequestEvent>();
+            _messageRunner.RegisterMessage<GitLab.Events.PushEvent>();
         }
         
         public async Task StartAsync(CancellationToken cancellationToken)

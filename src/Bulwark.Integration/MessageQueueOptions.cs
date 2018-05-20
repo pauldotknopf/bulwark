@@ -4,10 +4,10 @@
     {
         public MessageQueueOptions()
         {
-            MessageQueueType = Types.MessageQueueType.InMemory;
+            Type = Types.MessageQueueType.InMemory;
         }
         
-        public Types.MessageQueueType MessageQueueType { get; set; }
+        public Types.MessageQueueType Type { get; set; }
         
         public string RabbitMqServerUrl { get; set; }
         
@@ -16,7 +16,7 @@
             public enum MessageQueueType
             {
                 InMemory, // Not recommended for production
-                RabbitMq
+                RabbitMQ
             }
         }
     }

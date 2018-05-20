@@ -12,6 +12,7 @@ namespace Bulwark.Integration
             services.AddSingleton<Messages.IMessageSender>(context => context.GetRequiredService<Messages.Impl.ConfiguratedMessageSender>());
             services.AddSingleton<Repository.IRepositoryCache, Repository.Impl.RepositoryCache>();
             services.Configure<RepositoryCacheOptions>(configuration.GetSection("RepositoryCache"));
+            services.Configure<MessageQueueOptions>(configuration.GetSection("MessageQueue"));
         }
     }
 }
