@@ -78,6 +78,7 @@ $@"<Project>
                     {
                         // We aren't on master.
                         Log.Warning("Not on master, skipping publish...");
+                        return;
                     }
                 }
 
