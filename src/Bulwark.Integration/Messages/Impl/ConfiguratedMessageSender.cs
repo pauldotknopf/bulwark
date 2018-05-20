@@ -11,30 +11,30 @@ namespace Bulwark.Integration.Messages.Impl
     {
         readonly IMessageSender _innerSender;
         readonly IMessageRunner _innerRunner;
-        readonly ILogger<ConfiguratedMessageSender> _logger;
-        
+
         public ConfiguratedMessageSender(
-            IOptions<MessageQueueOptions> options,
+            IOptions<MessageTypeOptions> messageTypesOptions,
+            IOptions<MessageQueueOptions> messageQueueOptions,
             ILoggerFactory loggerFactory,
             IServiceScopeFactory serviceScopeFactory)
         {
-            _logger = loggerFactory.CreateLogger<ConfiguratedMessageSender>();
-            var optionsValue = options.Value;
-            switch (optionsValue.Type)
+            var logger = loggerFactory.CreateLogger<ConfiguratedMessageSender>();
+            var value = messageQueueOptions.Value;
+            switch (value.Type)
             {
-                    case MessageQueueOptions.Types.MessageQueueType.InMemory:
-                        _logger.LogWarning("Don't use the in-memory message handler in production. Try RabbitMQ, or send a PR for something else.");
-                        var inMemory = new InMemoryMessageSender(serviceScopeFactory, loggerFactory);
-                        _innerSender = inMemory;
-                        _innerRunner = inMemory;
-                        break;
-                    case MessageQueueOptions.Types.MessageQueueType.RabbitMQ:
-                        var rabbitMq = new RabbitMqMessageSender(optionsValue.RabbitMqServerUrl, serviceScopeFactory);
-                        _innerSender = rabbitMq;
-                        _innerRunner = rabbitMq;
-                        break;
-                    default:
-                        throw new Exception($"Unknow message queue type {optionsValue.Type}");
+                case MessageQueueOptions.Types.MessageQueueType.InMemory:
+                    logger.LogWarning("Don't use the in-memory message handler in production. Try RabbitMQ, or send a PR for something else.");
+                    var inMemory = new InMemoryMessageSender(serviceScopeFactory, loggerFactory);
+                    _innerSender = inMemory;
+                    _innerRunner = inMemory;
+                    break;
+                case MessageQueueOptions.Types.MessageQueueType.RabbitMQ:
+                    var rabbitMq = new RabbitMqMessageSender(messageQueueOptions, messageTypesOptions, serviceScopeFactory, loggerFactory);
+                    _innerSender = rabbitMq;
+                    _innerRunner = rabbitMq;
+                    break;
+                default:
+                    throw new Exception($"Unknow message queue type {value.Type}");
             }
         }
         
@@ -43,14 +43,9 @@ namespace Bulwark.Integration.Messages.Impl
             return _innerSender.Send(message);
         }
 
-        public IDisposable Run()
+        public Task<IMessageRunnerSession> Run()
         {
             return _innerRunner.Run();
-        }
-
-        public void RegisterMessage<T>() where T : class
-        {
-            _innerRunner.RegisterMessage<T>();
         }
     }
 }

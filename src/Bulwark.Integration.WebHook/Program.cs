@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
-using Bulwark.Integration.Messages;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -14,7 +12,7 @@ namespace Bulwark.Integration.WebHook
 {
     public static class Program
     {
-        public static int Main(string[] args)
+        public static async Task<int> Main(string[] args)
         {
             var cliApp = new CommandLineApplication();
 
@@ -73,9 +71,10 @@ namespace Bulwark.Integration.WebHook
         private static IHost BuildWorkerHost()
         {
             return new HostBuilder()
+                .UseConsoleLifetime()
                 .ConfigureAppConfiguration((builderContext, config) =>
                 {
-                    config.AddJsonFile("config.json", true /*optional*/);
+                    config.AddJsonFile("config.json");
                 })
                 .ConfigureServices((context, services) =>
                 {
@@ -94,7 +93,7 @@ namespace Bulwark.Integration.WebHook
             return WebHost.CreateDefaultBuilder()
                 .ConfigureAppConfiguration((builderContext, config) =>
                 {
-                    config.AddJsonFile("config.json", true /*optional*/);
+                    config.AddJsonFile("config.json");
                 })
                 .ConfigureServices((context, services) =>
                 {

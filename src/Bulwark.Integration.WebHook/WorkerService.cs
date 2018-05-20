@@ -9,15 +9,12 @@ namespace Bulwark.Integration.WebHook
     public class WorkerService : IHostedService
     {
         readonly IMessageRunner _messageRunner;
-        IDisposable _messageRunnerSession;
+        IMessageRunnerSession _messageRunnerSession;
         readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1,1);
         
         public WorkerService(IMessageRunner messageRunner)
         {
             _messageRunner = messageRunner;
-            _messageRunner.RegisterMessage<GitLab.Events.MergeRequestEvent>();
-            _messageRunner.RegisterMessage<GitLab.Events.UpdateMergeRequestEvent>();
-            _messageRunner.RegisterMessage<GitLab.Events.PushEvent>();
         }
         
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -26,7 +23,7 @@ namespace Bulwark.Integration.WebHook
             try
             {
                 if (_messageRunnerSession != null) return;
-                _messageRunnerSession = _messageRunner.Run();
+                _messageRunnerSession = await _messageRunner.Run();
             }
             finally
             {
@@ -40,7 +37,7 @@ namespace Bulwark.Integration.WebHook
             try
             {
                 if (_messageRunnerSession == null) return;
-                _messageRunnerSession.Dispose();
+                await _messageRunnerSession.DisposeAsync();
                 _messageRunnerSession = null;
             }
             finally

@@ -42,22 +42,18 @@ namespace Bulwark.Integration.Messages.Impl
             return Task.CompletedTask;
         }
 
-        public IDisposable Run()
+        public Task<IMessageRunnerSession> Run()
         {
             Console.WriteLine("Starting in memory runner...");
-            return new InMemoryRunner();
+            return Task.FromResult<IMessageRunnerSession>(new InMemoryRunner());
         }
-
-        public void RegisterMessage<T>() where T : class
+        
+        class InMemoryRunner : IMessageRunnerSession
         {
-            // Not needed.
-        }
-
-        class InMemoryRunner : IDisposable
-        {
-            public void Dispose()
+            public Task DisposeAsync()
             {
                 Console.WriteLine("Finished in memory runner");
+                return Task.CompletedTask;
             }
         }
     }

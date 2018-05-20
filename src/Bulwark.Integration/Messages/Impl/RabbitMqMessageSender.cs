@@ -1,72 +1,107 @@
 ﻿using System;
-using System.Threading;
+using System.Reflection;
 using System.Threading.Tasks;
+using MassTransit;
+using MassTransit.RabbitMqTransport;
 using Microsoft.Extensions.DependencyInjection;
-using ServiceStack;
-using ServiceStack.RabbitMq;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Bulwark.Integration.Messages.Impl
 {
     public class RabbitMqMessageSender : IMessageSender, IMessageRunner
     {
+        readonly IOptions<MessageQueueOptions> _messageQueueOptions;
+        readonly IOptions<MessageTypeOptions> _messageTypeOptions;
         readonly IServiceScopeFactory _serviceScopeFactory;
-        readonly RabbitMqServer _server;
+        readonly ILogger<RabbitMqMessageSender> _logger;
+        readonly IBusControl _bus;
         
-        public RabbitMqMessageSender(string serverUrl,
-            IServiceScopeFactory serviceScopeFactory)
+        public RabbitMqMessageSender(
+            IOptions<MessageQueueOptions> messageQueueOptions,
+            IOptions<MessageTypeOptions> messageTypeOptions,
+            IServiceScopeFactory serviceScopeFactory,
+            ILoggerFactory loggerFactory)
         {
-            if(string.IsNullOrEmpty(serverUrl)) throw new Exception("You must provide a rabbitmq server url.");
+            _messageQueueOptions = messageQueueOptions;
+            _messageTypeOptions = messageTypeOptions;
             _serviceScopeFactory = serviceScopeFactory;
-            _server = new RabbitMqServer(serverUrl);
-        }
-        
-        public Task Send<T>(T message) where T : class
-        {
-            return Task.Run(() =>
+            _logger = loggerFactory.CreateLogger<RabbitMqMessageSender>();
+            
+            _bus = Bus.Factory.CreateUsingRabbitMq(sbc =>
             {
-                using (var client = _server.CreateMessageQueueClient())
+                sbc.Host(new Uri($"rabbitmq://{messageQueueOptions.Value.RabbitMqHost}"), h =>
                 {
-                    client.Publish(message);
-                }
+                    h.Username(messageQueueOptions.Value.RabbitMqUsername);
+                    h.Password(messageQueueOptions.Value.RabbitMqPassword);
+                });
             });
         }
 
-        public IDisposable Run()
+        public async Task Send<T>(T message) where T : class
         {
-            // Get all registered handlers
-            _server.Start();
-            
-            return new RabbitRunner(_server);
+            _logger.LogInformation($"Pushing message {message.GetType().Name}");
+
+            var endpoint = await _bus.GetSendEndpoint(new Uri($"rabbitmq://{_messageQueueOptions.Value.RabbitMqHost}/work_queue"));
+            await endpoint.Send(message);
         }
 
-        public void RegisterMessage<T>() where T : class
+        public async Task<IMessageRunnerSession> Run()
         {
-            _server.RegisterHandler<T>(message =>
+            _logger.LogWarning("Starting RabbitMQ listener");
+            
+            var receiveBus = Bus.Factory.CreateUsingRabbitMq(sbc =>
+            {
+                var host = sbc.Host(new Uri($"rabbitmq://{_messageQueueOptions.Value.RabbitMqHost}"), h =>
+                {
+                    h.Username(_messageQueueOptions.Value.RabbitMqUsername);
+                    h.Password(_messageQueueOptions.Value.RabbitMqPassword);
+                });
+
+                sbc.ReceiveEndpoint(host, "work_queue", ep =>
+                {
+                    foreach (var type in _messageTypeOptions.Value.Types)
+                    {
+                        var method = typeof(RabbitMqMessageSender).GetMethod("RegisterHandler", BindingFlags.Instance | BindingFlags.NonPublic);
+                        // ReSharper disable once PossibleNullReferenceException
+                        var genericMethod = method.MakeGenericMethod(type);
+                        genericMethod.Invoke(this, new object[] {ep});
+                    }
+                });
+            });
+
+            await receiveBus.StartAsync();
+            
+            return new RabbitRunner(_logger, receiveBus);
+        }
+
+        // ReSharper disable once UnusedMember.Local
+        private void RegisterHandler<T>(IRabbitMqReceiveEndpointConfigurator ep) where T : class
+        {
+            ep.Handler<T>(async context =>
             {
                 using (var scope = _serviceScopeFactory.CreateScope())
                 {
-                    var task = scope.ServiceProvider.GetRequiredService<IMessageHandler<T>>().Handle(message.GetBody());
-                    task.GetAwaiter().GetResult();
+                    await scope.ServiceProvider.GetRequiredService<IMessageHandler<T>>().Handle(context.Message);
                 }
-
-                return null;
             });
         }
 
-        class RabbitRunner : IDisposable
+        class RabbitRunner : IMessageRunnerSession
         {
-            private readonly RabbitMqServer _server;
+            readonly ILogger<RabbitMqMessageSender> _logger;
+            readonly IBusControl _bus;
 
-            public RabbitRunner(RabbitMqServer server)
+            public RabbitRunner(ILogger<RabbitMqMessageSender> logger, IBusControl bus)
             {
-                _server = server;
+                _logger = logger;
+                _bus = bus;
             }
             
-            public void Dispose()
+            public async Task DisposeAsync()
             {
-                // We are stopping, shutdown the processing of messages, wait for finish.
-                _server.Stop();
-                _server.WaitForWorkersToStop();
+                _logger.LogInformation("Stopping RabbitMQ listener");
+                await _bus.StopAsync();
             }
         }
     }

@@ -36,6 +36,7 @@ namespace Bulwark.Integration.WebHook.Controllers
             switch (eventType)
             {
                 case "Push Hook":
+                    _logger.LogInformation("Sending push hook event");
                     var push = await DeserializeBody<PushHook>();
                     await _messageSender.Send(new PushEvent
                     {
@@ -43,6 +44,7 @@ namespace Bulwark.Integration.WebHook.Controllers
                     });
                     return Ok();
                 case "Merge Request Hook":
+                    _logger.LogInformation("Sending merge request event");
                     var mergeRequest = await DeserializeBody<MergeRequestHook>();
                     await _messageSender.Send(new MergeRequestEvent
                     {
@@ -59,9 +61,7 @@ namespace Bulwark.Integration.WebHook.Controllers
         {
             using (var streamReader = new StreamReader(Request.Body))
             {
-                var content = await streamReader.ReadToEndAsync();
-                Debug.WriteLine(content);
-                return JsonConvert.DeserializeObject<T>(content);
+                return JsonConvert.DeserializeObject<T>(await streamReader.ReadToEndAsync());
             }
         }
     }
