@@ -19,6 +19,8 @@ namespace Build
             var gitversion = GetGitVersion("./");
             var nugetSource = "https://api.nuget.org/v3/index.json";
             var nugetApiKey = Environment.GetEnvironmentVariable("NUGET_API_KEY");
+            var dockerUsername = Environment.GetEnvironmentVariable("DOCKER_USERNAME");
+            var dockerPassword = Environment.GetEnvironmentVariable("DOCKER_PASSWORD");
 
             var commandBuildArgs = $"--configuration {options.Configuration}";
             if (!string.IsNullOrEmpty(gitversion.PreReleaseTag))
@@ -45,6 +47,8 @@ namespace Build
             {
                 // Deploy our nuget packages.
                 RunShell($"dotnet pack --output {ExpandPath("./output")} {commandBuildArgs}");
+                RunShell($"dotnet publish src/integration/Bulwark.Integration.WebHook --output {ExpandPath("./output/webhook/linux-x64")} --runtime linux-x64 {commandBuildArgs}");
+                RunShell("docker build output --file build/docker/Dockerfile --tag pauldotknopf/bulwark:build");
             });
 
             Add("update-version", () =>
@@ -87,11 +91,25 @@ $@"<Project>
                     throw new Exception("No NUGET_API_KEY provided.");
                 }
 
+                if (string.IsNullOrEmpty(dockerUsername))
+                {
+                    throw new Exception("No DOCKER_USERNAME provided.");
+                }
+
+                if (string.IsNullOrEmpty(dockerPassword))
+                {
+                    throw new Exception("No DOCKER_PASSWORD provided.");
+                }
+
                 foreach(var file in GetFiles("./output", "*.nupkg"))
                 {
                     Log.Info($"Deploying {file}");
                     RunShell($"dotnet nuget push {file} --source \"{nugetSource}\" --api-key \"{nugetApiKey}\"");
                 }
+                
+                RunShell($"docker login -u {dockerUsername} -p {dockerPassword}");
+                RunShell($"docker tag pauldotknopf/bulwark:build pauldotknopf/bulwark:v{gitversion.FullVersion}");
+                RunShell($"docker push pauldotknopf/bulwark:v{gitversion.FullVersion}");
             });
             
             Add("ci", DependsOn("update-version", "test", "deploy", "publish"));
