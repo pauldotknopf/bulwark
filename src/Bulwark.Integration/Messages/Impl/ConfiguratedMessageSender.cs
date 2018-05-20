@@ -33,6 +33,11 @@ namespace Bulwark.Integration.Messages.Impl
                     _innerSender = rabbitMq;
                     _innerRunner = rabbitMq;
                     break;
+                case MessageQueueOptions.Types.MessageQueueType.DiskQueue:
+                    var diskQueue = new DiskQueueMessageSender(messageQueueOptions, loggerFactory, serviceScopeFactory);
+                    _innerSender = diskQueue;
+                    _innerRunner = diskQueue;
+                    break;
                 default:
                     throw new Exception($"Unknow message queue type {value.Type}");
             }

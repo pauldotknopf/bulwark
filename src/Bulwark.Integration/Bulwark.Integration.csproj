@@ -6,6 +6,7 @@
     <ProjectReference Include="..\Bulwark\Bulwark.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="DiskQueue" Version="1.1.0" />
     <PackageReference Include="MassTransit" Version="5.1.1" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="5.1.1" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.1.0-rc1-final" />

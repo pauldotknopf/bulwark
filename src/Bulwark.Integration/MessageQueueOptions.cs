@@ -6,6 +6,7 @@
         {
             Type = Types.MessageQueueType.InMemory;
             RabbitMqPort = 5672;
+            DiskQueueLocation = "disk_queue";
         }
         
         public Types.MessageQueueType Type { get; set; }
@@ -18,12 +19,15 @@
         
         public int RabbitMqPort { get; set; }
         
+        public string DiskQueueLocation { get; set; }
+        
         public class Types
         {
             public enum MessageQueueType
             {
                 InMemory, // Not recommended for production
-                RabbitMQ
+                RabbitMQ,
+                DiskQueue
             }
         }
     }
