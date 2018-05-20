@@ -35,7 +35,6 @@ namespace Bulwark.Integration.Messages.Impl
         public Task Send<T>(T message) where T : class
         {
             _logger.LogInformation($"Sending message {typeof(T).Namespace}");
-            Console.WriteLine($"Sending message {typeof(T).Namespace}");
             var messages = _database.GetCollection<Message>("messages");
             messages.Insert(new Message
             {
@@ -87,18 +86,17 @@ namespace Bulwark.Integration.Messages.Impl
             {
                 try
                 {
-                    var collection = _database.GetCollection<Message>("messages");
                     while (!_cancellationToken.IsCancellationRequested)
                     {
+                        var collection = _database.GetCollection<Message>("messages");
                         var next = collection.FindOne(Query.All("ScheduleOn"));
                         if (next == null)
                         {
-                            Thread.Sleep(100);
+                            Thread.Sleep(1000);
                             continue;
                         }
 
                         _logger.LogInformation("Got message from database.");
-                        Console.WriteLine("Got message from database.");
                         
                         try
                         {
@@ -106,7 +104,6 @@ namespace Bulwark.Integration.Messages.Impl
                             if (type == null) throw new Exception($"Invalid type {next.Type}");
 
                             _logger.LogInformation($"Processing message {type.Name}");
-                            Console.WriteLine($"Processing message {type.Name}");
                             
                             var method = _processMessageMethod.MakeGenericMethod(type);
                             method.Invoke(this, new object[] {next.Content});
