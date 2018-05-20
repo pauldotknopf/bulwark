@@ -38,6 +38,11 @@ namespace Bulwark.Integration.Messages.Impl
                     _innerSender = diskQueue;
                     _innerRunner = diskQueue;
                     break;
+                case MessageQueueOptions.Types.MessageQueueType.LiteDB:
+                    var liteDb = new LiteDBMessageSender(messageQueueOptions, loggerFactory, serviceScopeFactory);
+                    _innerSender = liteDb;
+                    _innerRunner = liteDb;
+                    break;
                 default:
                     throw new Exception($"Unknow message queue type {value.Type}");
             }

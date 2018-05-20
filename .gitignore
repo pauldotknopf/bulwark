@@ -330,3 +330,4 @@ ASALocalRun/
 .mfractor/
 
 src/Bulwark.Integration.WebHook/disk_queue
+src/Bulwark.Integration.WebHook/lite.db
