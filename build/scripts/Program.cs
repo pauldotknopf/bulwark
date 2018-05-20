@@ -105,7 +105,7 @@ $@"<Project>
         // ReSharper restore ClassNeverInstantiated.Local
         {
             [PowerArgs.ArgShortcut("config"), PowerArgs.ArgDefaultValue("Release")]
-            public string Configuration => null;
+            public string Configuration { get; set; }
         }
     }
 }
