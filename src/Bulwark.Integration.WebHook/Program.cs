@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.IO;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -12,7 +12,7 @@ namespace Bulwark.Integration.WebHook
 {
     public static class Program
     {
-        public static async Task<int> Main(string[] args)
+        public static int Main(string[] args)
         {
             var cliApp = new CommandLineApplication();
 
@@ -70,11 +70,22 @@ namespace Bulwark.Integration.WebHook
         
         private static IHost BuildWorkerHost()
         {
+            var environmentName = new ConfigurationBuilder()
+                .AddEnvironmentVariables("ASPNETCORE_")
+                .Build()
+                .GetValue(HostDefaults.EnvironmentKey, Microsoft.Extensions.Hosting.EnvironmentName.Production);
+            
             return new HostBuilder()
                 .UseConsoleLifetime()
+                .UseEnvironment(environmentName)
+                .UseContentRoot(Directory.GetCurrentDirectory())
                 .ConfigureAppConfiguration((builderContext, config) =>
                 {
-                    config.AddJsonFile("config.json");
+                    config.AddEnvironmentVariables("ASPNETCORE_");
+                    config.SetFileProvider(builderContext.HostingEnvironment.ContentRootFileProvider);
+                    config.AddJsonFile("appsettings.json", true);
+                    config.AddJsonFile($"appsettings.{builderContext.HostingEnvironment.EnvironmentName}.json", true);
+                    config.AddJsonFile("config.json", true);
                 })
                 .ConfigureServices((context, services) =>
                 {
@@ -93,7 +104,7 @@ namespace Bulwark.Integration.WebHook
             return WebHost.CreateDefaultBuilder()
                 .ConfigureAppConfiguration((builderContext, config) =>
                 {
-                    config.AddJsonFile("config.json");
+                    config.AddJsonFile("config.json", true);
                 })
                 .ConfigureServices((context, services) =>
                 {
