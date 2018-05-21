@@ -23,9 +23,11 @@ The `CODEOWNERS` file acts exactly as `.gitignore`. Similary, the file can also 
 1. Run the web hook server. Example `docker-compose.yml` file [here](build/docker/example/docker-compose.yml). Configurable options [here](todo).
    * At a bare minimum, you should have the following configured for Bulwark to properly communicate with GitLab.
    ```
-    "GitLab": {
-        "AuthenticationToken": "your-auth-token"
-    },
+   {
+     "GitLab": {
+       "AuthenticationToken": "your-auth-token"
+      },
+   }
    ```
    This configuration should go in a `config.json` file in the working directory of the running Bulwark instance.
 2. On GitLab under `Project > Settings > Integrations`, add a web hook that points to `https://your-bulwark-instance.com/gitlab` and tick the following:
@@ -37,3 +39,29 @@ The `CODEOWNERS` file acts exactly as `.gitignore`. Similary, the file can also 
    * [x] Remove all approvals in a merge request when new commits are pushed to its source branch (optional)
 
 That's it. Submit a pull request with a CODEOWNERS file and watch users get automatically assigned as reviewers.
+
+## More options
+
+### Message queue
+
+**Defaults**:
+
+```
+{
+  "MessageQueue": {
+    "Type": "Sqlite",
+    "SqlLiteDBLocation": "sqlite.db",
+    "RabbitMqHost": null,
+    "RabbitMqUsername": null,
+    "RabbitMqPassword": null,
+    "RabbitMqPort": 5672
+  }
+}
+```
+
+**Types**:
+
+* `Sqlite` - The default method. New messages are stored in the database and a worker thread (or another process) consumes them.
+* `RabbitMq` - Use an external RabbitMQ server to store the message.
+  
+  ```
