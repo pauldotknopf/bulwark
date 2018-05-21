@@ -48,7 +48,8 @@ namespace Build
                 // Deploy our nuget packages.
                 RunShell($"dotnet pack --output {ExpandPath("./output")} {commandBuildArgs}");
                 RunShell($"dotnet publish src/integration/Bulwark.Integration.WebHook --output {ExpandPath("./output/webhook/linux-x64")} --runtime linux-x64 {commandBuildArgs}");
-                RunShell("docker build output --file build/docker/Dockerfile --tag pauldotknopf/bulwark:build");
+                CopyFile("./build/docker/Dockerfile", "./output/Dockerfile");
+                RunShell("docker build output --tag pauldotknopf/bulwark:build");
             });
 
             Add("update-version", () =>
@@ -109,7 +110,9 @@ $@"<Project>
                 
                 RunShell($"docker login -u {dockerUsername} -p {dockerPassword}");
                 RunShell($"docker tag pauldotknopf/bulwark:build pauldotknopf/bulwark:v{gitversion.FullVersion}");
+                RunShell("docker tag pauldotknopf/bulwark:build pauldotknopf/bulwark:latest");
                 RunShell($"docker push pauldotknopf/bulwark:v{gitversion.FullVersion}");
+                RunShell("docker push pauldotknopf/bulwark:latest");
             });
             
             Add("ci", DependsOn("update-version", "test", "deploy", "publish"));
