@@ -7,6 +7,8 @@ using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Events;
 
 namespace Bulwark.Integration.WebHook
 {
@@ -28,18 +30,21 @@ namespace Bulwark.Integration.WebHook
 
             cliApp.OnExecute(async () =>
             {
+                PrepLogger();
+                
                 var webOnly = webOnlyOption.HasValue();
                 var workerOnly = workerOnlyOption.HasValue();
 
                 if (webOnly && workerOnly)
                 {
-                    Console.WriteLine("You must provide either --web-only or --worker-only...");
+                    Log.Logger.Error("You must provide either --web-only or --worker-only, not both");
                     return -1;
                 }
 
                 if (!webOnly && !workerOnly)
                 {
                     // We are running both web listener and worker.
+                    Log.Logger.Information("Running in both worker-only and web-only mode");
                     var host = BuildWebHost();
                     await host.RunAsync();
                     return 0;
@@ -48,12 +53,14 @@ namespace Bulwark.Integration.WebHook
                 if (workerOnly)
                 {
                     // Only running worker.
+                    Log.Logger.Information("Running in worker-only mode");
                     var host = BuildWorkerHost();
                     await host.RunAsync();
                 }
                 else
                 {
                     // Only running web listener.
+                    Log.Logger.Information("Running in web-only mode.");
                     var host = BuildWebHost(false /*don't run worker*/);
                     await host.RunAsync();
                 }
@@ -66,6 +73,49 @@ namespace Bulwark.Integration.WebHook
             Console.WriteLine("exiting...");
 
             return 0;
+        }
+
+        private static void PrepLogger()
+        {
+            var host = WebHost.CreateDefaultBuilder()
+                .ConfigureAppConfiguration((_, c) =>
+                {
+                    c.AddJsonFile("config.json", true);
+                })
+                .Configure(app => {})
+                .Build();
+
+            var logSection = host.Services.GetRequiredService<IConfiguration>().GetSection("Logging");
+            var minimalLevel = logSection.GetValue("MinimumLevel", LogEventLevel.Information);
+            var logFile = logSection.GetValue<string>("File");
+            var isRolling = logSection.GetValue("Rolling", false);
+
+            var loggerConfiguration = new LoggerConfiguration()
+                .MinimumLevel.Is(minimalLevel)
+                .WriteTo.Console();
+
+            if (!string.IsNullOrEmpty(logFile))
+            {
+                if (!Path.IsPathRooted(logFile))
+                {
+                    logFile = Path.Combine(Directory.GetCurrentDirectory(), logFile);
+                }
+
+                if (isRolling)
+                {
+                    loggerConfiguration.WriteTo.RollingFile(logFile);
+                }
+                else
+                {
+                    loggerConfiguration.WriteTo.File(logFile);
+                }
+            }
+            
+            Log.Logger = loggerConfiguration.CreateLogger();
+            
+            Log.Logger.Error("This is an error");
+            Log.Logger.Information("This is info");
+            Log.Logger.Debug("This is debug");
         }
         
         private static IHost BuildWorkerHost()
@@ -89,6 +139,7 @@ namespace Bulwark.Integration.WebHook
                 })
                 .ConfigureServices((context, services) =>
                 {
+                    services.AddLogging(loggingBuilder => { loggingBuilder.AddSerilog(dispose: true); });
                     // ReSharper disable RedundantNameQualifier
                     Bulwark.Services.Register(services);
                     Bulwark.Integration.Services.Register(services, context.Configuration);
@@ -108,6 +159,7 @@ namespace Bulwark.Integration.WebHook
                 })
                 .ConfigureServices((context, services) =>
                 {
+                    services.AddLogging(loggingBuilder => { loggingBuilder.AddSerilog(dispose: true); });
                     services.AddMvc();
                     // ReSharper disable RedundantNameQualifier
                     Bulwark.Services.Register(services);
