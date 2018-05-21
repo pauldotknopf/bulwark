@@ -59,9 +59,31 @@ That's it. Submit a pull request with a CODEOWNERS file and watch users get auto
 }
 ```
 
-**Types**:
+**Details**:
 
-* `Sqlite` - The default method. New messages are stored in the database and a worker thread (or another process) consumes them.
-* `RabbitMq` - Use an external RabbitMQ server to store the message.
-  
-  ```
+* `"Type"`:
+  * `"Sqlite"` - The default method. New messages are stored in the database and a worker thread (or another process) consumes them.
+  * `"RabbitMq"` - Use an external RabbitMQ server to store the message.
+
+## GitLab
+
+**Defaults**:
+
+```
+{
+  "GitLab": {
+    "Enabled": true,
+    "ServerUrl": "https://gitlab.com/",
+    "AuthenticationToken": null,
+    "TargetBranchesFilter": null,
+    "AutoMergePullRequests": false,
+    "MergeCommitMessage": null,
+    "ShouldRemoveSourceBranch": null
+  }
+}
+
+**Details**:
+
+* `"ServerUrl"`: You can point this to ```gitlab.com``` or your own hosted GitLab instance.
+* `"AuthenticationToken"`: Generate this from your account settings.
+* `"TargetBranchesFilter"`: A regular expression to match against branches you wish to process. You may want to set this to `master`.
