@@ -13,5 +13,6 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.1.0-rc1-final" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.1.0-rc1-final" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.1.0-rc1-final" />
+    <PackageReference Include="ServiceStack.OrmLite.Sqlite" Version="5.1.0" />
   </ItemGroup>
 </Project>

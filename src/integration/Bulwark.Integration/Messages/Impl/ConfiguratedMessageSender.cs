@@ -43,6 +43,11 @@ namespace Bulwark.Integration.Messages.Impl
                     _innerSender = liteDb;
                     _innerRunner = liteDb;
                     break;
+                case MessageQueueOptions.Types.MessageQueueType.Sqlite:
+                    var sqlite = new SqlLiteMessageSender(messageQueueOptions, loggerFactory, serviceScopeFactory);
+                    _innerSender = sqlite;
+                    _innerRunner = sqlite;
+                    break;
                 default:
                     throw new Exception($"Unknow message queue type {value.Type}");
             }

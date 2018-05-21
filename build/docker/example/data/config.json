@@ -1,9 +1,6 @@
 {
     "MessageQueue": {
-        "Type": "RabbitMQ",
-        "RabbitMqHost": "rabbitmq",
-        "RabbitMqUsername": "username",
-        "RabbitMqPassword": "password"
+        "Type": "Sqlite"
     },
     "GitLab": {
         "Enabled": true,
