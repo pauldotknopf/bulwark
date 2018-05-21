@@ -6,8 +6,6 @@
         {
             Type = Types.MessageQueueType.InMemory;
             RabbitMqPort = 5672;
-            DiskQueueLocation = "disk_queue";
-            LiteDBLocation = "lite.db";
             SqlLiteDBLocation = "sqlite.db";
         }
         
@@ -21,10 +19,6 @@
         
         public int RabbitMqPort { get; set; }
         
-        public string DiskQueueLocation { get; set; }
-        
-        public string LiteDBLocation { get; set; }
-        
         public string SqlLiteDBLocation { get; set; }
         
         public class Types
@@ -33,8 +27,6 @@
             {
                 InMemory, // Not recommended for production
                 RabbitMQ,
-                DiskQueue,
-                LiteDB,
                 Sqlite
             }
         }

@@ -6,25 +6,25 @@ using MassTransit.RabbitMqTransport;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace Bulwark.Integration.Messages.Impl
 {
     public class RabbitMqMessageSender : IMessageSender, IMessageRunner
     {
-        readonly IOptions<MessageQueueOptions> _messageQueueOptions;
-        readonly IOptions<MessageTypeOptions> _messageTypeOptions;
+        readonly MessageQueueOptions _messageQueueOptions;
         readonly IServiceScopeFactory _serviceScopeFactory;
         readonly ILogger<RabbitMqMessageSender> _logger;
         readonly IBusControl _bus;
+        readonly MethodInfo _processMessageMethod;
         
         public RabbitMqMessageSender(
             IOptions<MessageQueueOptions> messageQueueOptions,
-            IOptions<MessageTypeOptions> messageTypeOptions,
             IServiceScopeFactory serviceScopeFactory,
             ILoggerFactory loggerFactory)
         {
-            _messageQueueOptions = messageQueueOptions;
-            _messageTypeOptions = messageTypeOptions;
+            _processMessageMethod = typeof(RabbitMqMessageSender).GetMethod("ProcessMessage", BindingFlags.Instance | BindingFlags.NonPublic);
+            _messageQueueOptions = messageQueueOptions.Value;
             _serviceScopeFactory = serviceScopeFactory;
             _logger = loggerFactory.CreateLogger<RabbitMqMessageSender>();
             
@@ -43,8 +43,12 @@ namespace Bulwark.Integration.Messages.Impl
         {
             _logger.LogInformation($"Pushing message {typeof(T).Name}");
 
-            var endpoint = await _bus.GetSendEndpoint(new Uri($"rabbitmq://{_messageQueueOptions.Value.RabbitMqHost}/work_queue"));
-            await endpoint.Send(message);
+            var endpoint = await _bus.GetSendEndpoint(new Uri($"rabbitmq://{_messageQueueOptions.RabbitMqHost}/work_queue"));
+            await endpoint.Send(new Message
+            {
+                Type = $"{message.GetType().FullName}, {message.GetType().Assembly.FullName}",
+                Content = JsonConvert.SerializeObject(message)
+            });
         }
 
         public async Task<IMessageRunnerSession> Run()
@@ -53,21 +57,26 @@ namespace Bulwark.Integration.Messages.Impl
             
             var receiveBus = Bus.Factory.CreateUsingRabbitMq(sbc =>
             {
-                var host = sbc.Host(new Uri($"rabbitmq://{_messageQueueOptions.Value.RabbitMqHost}"), h =>
+                var host = sbc.Host(new Uri($"rabbitmq://{_messageQueueOptions.RabbitMqHost}"), h =>
                 {
-                    h.Username(_messageQueueOptions.Value.RabbitMqUsername);
-                    h.Password(_messageQueueOptions.Value.RabbitMqPassword);
+                    h.Username(_messageQueueOptions.RabbitMqUsername);
+                    h.Password(_messageQueueOptions.RabbitMqPassword);
                 });
 
                 sbc.ReceiveEndpoint(host, "work_queue", ep =>
                 {
-                    foreach (var type in _messageTypeOptions.Value.Types)
+                    ep.Handler<Message>(async context =>
                     {
-                        var method = typeof(RabbitMqMessageSender).GetMethod("RegisterHandler", BindingFlags.Instance | BindingFlags.NonPublic);
-                        // ReSharper disable once PossibleNullReferenceException
-                        var genericMethod = method.MakeGenericMethod(type);
-                        genericMethod.Invoke(this, new object[] {ep});
-                    }
+                        var type = Type.GetType(context.Message.Type);
+                        if (type == null) throw new Exception($"Invalid type {context.Message.Type}");
+
+                        _logger.LogInformation($"Processing message {type.Name}");
+                        
+                        var method = _processMessageMethod.MakeGenericMethod(type);
+                        var result = (Task)method.Invoke(this, new object[] {context.Message.Content});
+                        
+                        await result;
+                    });
                 });
             });
 
@@ -75,18 +84,23 @@ namespace Bulwark.Integration.Messages.Impl
             
             return new RabbitRunner(_logger, receiveBus);
         }
-
+        
         // ReSharper disable once UnusedMember.Local
-        private void RegisterHandler<T>(IRabbitMqReceiveEndpointConfigurator ep) where T : class
+        private async Task ProcessMessage<T>(string data) where T : class
         {
-            ep.Handler<T>(async context =>
+            var message = JsonConvert.DeserializeObject<T>(data);
+            using (var scope = _serviceScopeFactory.CreateScope())
             {
-                _logger.LogInformation($"Handling message {typeof(T).Name}");
-                using (var scope = _serviceScopeFactory.CreateScope())
-                {
-                    await scope.ServiceProvider.GetRequiredService<IMessageHandler<T>>().Handle(context.Message);
-                }
-            });
+                await scope.ServiceProvider.GetRequiredService<IMessageHandler<T>>()
+                    .Handle(message);
+            }
+        }
+
+        class Message
+        {
+            public string Type { get; set; }
+            
+            public string Content { get; set; }
         }
 
         class RabbitRunner : IMessageRunnerSession

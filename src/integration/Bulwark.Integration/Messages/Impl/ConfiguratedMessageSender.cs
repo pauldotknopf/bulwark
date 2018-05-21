@@ -13,7 +13,6 @@ namespace Bulwark.Integration.Messages.Impl
         readonly IMessageRunner _innerRunner;
 
         public ConfiguratedMessageSender(
-            IOptions<MessageTypeOptions> messageTypesOptions,
             IOptions<MessageQueueOptions> messageQueueOptions,
             ILoggerFactory loggerFactory,
             IServiceScopeFactory serviceScopeFactory)
@@ -29,19 +28,9 @@ namespace Bulwark.Integration.Messages.Impl
                     _innerRunner = inMemory;
                     break;
                 case MessageQueueOptions.Types.MessageQueueType.RabbitMQ:
-                    var rabbitMq = new RabbitMqMessageSender(messageQueueOptions, messageTypesOptions, serviceScopeFactory, loggerFactory);
+                    var rabbitMq = new RabbitMqMessageSender(messageQueueOptions, serviceScopeFactory, loggerFactory);
                     _innerSender = rabbitMq;
                     _innerRunner = rabbitMq;
-                    break;
-                case MessageQueueOptions.Types.MessageQueueType.DiskQueue:
-                    var diskQueue = new DiskQueueMessageSender(messageQueueOptions, loggerFactory, serviceScopeFactory);
-                    _innerSender = diskQueue;
-                    _innerRunner = diskQueue;
-                    break;
-                case MessageQueueOptions.Types.MessageQueueType.LiteDB:
-                    var liteDb = new LiteDBMessageSender(messageQueueOptions, loggerFactory, serviceScopeFactory);
-                    _innerSender = liteDb;
-                    _innerRunner = liteDb;
                     break;
                 case MessageQueueOptions.Types.MessageQueueType.Sqlite:
                     var sqlite = new SqlLiteMessageSender(messageQueueOptions, loggerFactory, serviceScopeFactory);
