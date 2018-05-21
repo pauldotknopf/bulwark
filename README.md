@@ -26,7 +26,7 @@ The `CODEOWNERS` file acts exactly as `.gitignore`. Similary, the file can also 
    {
      "GitLab": {
        "AuthenticationToken": "your-auth-token"
-      },
+      }
    }
    ```
    This configuration should go in a `config.json` file in the working directory of the running Bulwark instance.
