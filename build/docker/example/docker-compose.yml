@@ -1,0 +1,18 @@
+version: '3'
+services:
+  bulwark-web:
+    image: pauldotknopf/bulwark:build
+    volumes:
+       - ./data:/work
+       - data:/data
+    command: --web-only
+    ports:
+     - "5000:5000"
+  bulwark-worker:
+    image: pauldotknopf/bulwark:build
+    volumes:
+       - ./data:/work
+       - data:/data
+    command: --worker-only
+volumes:
+  data:

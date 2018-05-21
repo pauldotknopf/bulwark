@@ -1,0 +1,15 @@
+{
+    "MessageQueue": {
+        "Type": "Sqlite"
+    },
+    "GitLab": {
+        "Enabled": true,
+        "ServerUrl": "http://192.168.0.6/",
+        "AuthenticationToken": "AdNAuSLZxGvU1cHycNxU",
+        "TargetBranchesFilter": "master",
+        "AutoMergePullRequests": true
+    },
+    "RepositoryCache": {
+        "RepositoryCacheLocation": "/data/repository-cache"
+    }
+}

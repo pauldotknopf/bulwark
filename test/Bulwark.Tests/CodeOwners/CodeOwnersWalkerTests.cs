@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Bulwark.FileSystem;
-using Bulwark.Strategy.ApproversConfig.Impl;
 using Bulwark.Strategy.CodeOwners;
 using Bulwark.Strategy.CodeOwners.Impl;
-using FluentAssert;
 using LibGit2Sharp;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.FileSystemGlobbing;
 using Xunit;
 
 namespace Bulwark.Tests.CodeOwners

@@ -1,58 +1,65 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using LiteDB;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using RabbitMQ.Client;
+using ServiceStack.Data;
+using ServiceStack.DataAnnotations;
+using ServiceStack.OrmLite;
 
 namespace Bulwark.Integration.Messages.Impl
 {
-    public class LiteDBMessageSender : IMessageSender, IMessageRunner
+    public class SqliteMessageSender : IMessageSender, IMessageRunner
     {
         readonly IServiceScopeFactory _serviceScopeFactory;
-        readonly LiteDatabase _database;
-        readonly ILogger<LiteDBMessageSender> _logger;
+        readonly IDbConnectionFactory _dbFactory;
+        readonly ILogger<SqliteMessageSender> _logger;
         
-        public LiteDBMessageSender(IOptions<MessageQueueOptions> messageQueueOptions,
+        public SqliteMessageSender(
+            IOptions<MessageQueueOptions> messageQueueOptions,
             ILoggerFactory loggerFactory,
             IServiceScopeFactory serviceScopeFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
-            var messageOptionsValue = messageQueueOptions.Value;
-            if (string.IsNullOrEmpty(messageOptionsValue.LiteDBLocation))
+            var messageQueueOptionsValue = messageQueueOptions.Value;
+            
+            _dbFactory = new OrmLiteConnectionFactory(
+                messageQueueOptionsValue.SqlLiteDBLocation,  
+                SqliteDialect.Provider);
+            _logger = loggerFactory.CreateLogger<SqliteMessageSender>();
+            
+            using (var db = _dbFactory.Open())
             {
-                throw new Exception("You must provide a location to a LiteDB database.");
+                db.CreateTableIfNotExists<Message>();
             }
-            _logger = loggerFactory.CreateLogger<LiteDBMessageSender>();
-            _database = new LiteDatabase(messageOptionsValue.LiteDBLocation);
         }
         
-        public Task Send<T>(T message) where T : class
+        public async Task Send<T>(T message) where T : class
         {
-            _logger.LogInformation($"Sending message {typeof(T).Namespace}");
-            Console.WriteLine($"Sending message {typeof(T).Namespace}");
-            var messages = _database.GetCollection<Message>("messages");
-            messages.Insert(new Message
+            using (var connection = _dbFactory.OpenDbConnection())
             {
-                ScheduleOn = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                Type = $"{message.GetType().FullName}, {message.GetType().Assembly.FullName}",
-                Content = JsonConvert.SerializeObject(message)
-            });
-            return Task.CompletedTask;
+                connection.Open();
+                await connection.InsertAsync(new Message
+                {
+                    ScheduleOn = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                    Type = $"{message.GetType().FullName}, {message.GetType().Assembly.FullName}",
+                    Content = JsonConvert.SerializeObject(message)
+                });
+            }
         }
 
         public Task<IMessageRunnerSession> Run()
         {
-            return Task.FromResult<IMessageRunnerSession>(new RunnerSession(_database, _logger, _serviceScopeFactory));
+            return Task.FromResult<IMessageRunnerSession>(new RunnerSession(_dbFactory, _logger, _serviceScopeFactory));
         }
         
         class Message
         {
+            [AutoIncrement]
             public int Id { get; set; }
             
             public long ScheduleOn { get; set; }
@@ -61,22 +68,22 @@ namespace Bulwark.Integration.Messages.Impl
             
             public string Content { get; set; }
         }
-
-         class RunnerSession : IMessageRunnerSession
+        
+        class RunnerSession : IMessageRunnerSession
         {
-            readonly LiteDatabase _database;
-            readonly ILogger<LiteDBMessageSender> _logger;
+            readonly IDbConnectionFactory _dbFactory;
+            readonly ILogger<SqliteMessageSender> _logger;
             readonly IServiceScopeFactory _serviceScopeFactory;
             readonly Thread _thread;
             readonly CancellationTokenSource _cancellationToken = new CancellationTokenSource();
             readonly MethodInfo _processMessageMethod;
             
-            public RunnerSession(LiteDatabase database,
-                ILogger<LiteDBMessageSender> logger,
+            public RunnerSession(IDbConnectionFactory dbFactory,
+                ILogger<SqliteMessageSender> logger,
                 IServiceScopeFactory serviceScopeFactory)
             {
                 _processMessageMethod = typeof(RunnerSession).GetMethod("ProcessMessage", BindingFlags.Instance | BindingFlags.NonPublic);
-                _database = database;
+                _dbFactory = dbFactory;
                 _logger = logger;
                 _serviceScopeFactory = serviceScopeFactory;
                 _thread = new Thread(ThreadFun);
@@ -87,18 +94,25 @@ namespace Bulwark.Integration.Messages.Impl
             {
                 try
                 {
-                    var collection = _database.GetCollection<Message>("messages");
                     while (!_cancellationToken.IsCancellationRequested)
                     {
-                        var next = collection.FindOne(Query.All("ScheduleOn"));
+                        Message next = null;
+                        using (var connection = _dbFactory.CreateDbConnection())
+                        {
+                            connection.Open();
+                            var query = connection.From<Message>().OrderBy(x => x.ScheduleOn)
+                                .Limit(1);
+                            next = connection.LoadSelect(query)
+                                .FirstOrDefault();
+                        }
+                        
                         if (next == null)
                         {
-                            Thread.Sleep(100);
+                            Thread.Sleep(1000);
                             continue;
                         }
 
                         _logger.LogInformation("Got message from database.");
-                        Console.WriteLine("Got message from database.");
                         
                         try
                         {
@@ -106,13 +120,16 @@ namespace Bulwark.Integration.Messages.Impl
                             if (type == null) throw new Exception($"Invalid type {next.Type}");
 
                             _logger.LogInformation($"Processing message {type.Name}");
-                            Console.WriteLine($"Processing message {type.Name}");
                             
                             var method = _processMessageMethod.MakeGenericMethod(type);
                             method.Invoke(this, new object[] {next.Content});
 
                             // Processed
-                            collection.Delete(next.Id);
+                            using (var connection = _dbFactory.CreateDbConnection())
+                            {
+                                connection.Open();
+                                connection.Delete(next);
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -122,7 +139,11 @@ namespace Bulwark.Integration.Messages.Impl
                             // stuck in line.
                             next.ScheduleOn = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(5))
                                 .ToUnixTimeSeconds();
-                            collection.Update(next);
+                            using (var connection = _dbFactory.CreateDbConnection())
+                            {
+                                connection.Open();
+                                connection.Update(next);
+                            }
                         }
                     }
                 }

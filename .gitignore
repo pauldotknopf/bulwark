@@ -331,3 +331,4 @@ ASALocalRun/
 
 src/Bulwark.Integration.WebHook/disk_queue
 src/Bulwark.Integration.WebHook/lite.db
+output/
