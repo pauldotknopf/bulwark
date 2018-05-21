@@ -15,12 +15,6 @@ namespace Bulwark.Integration.GitLab
             services.AddScoped<IMessageHandler<MergeRequestEvent>, MergeRequestEventHandler>();
             services.AddScoped<IMessageHandler<PushEvent>, PushEventHandler>();
             services.AddScoped<IMessageHandler<UpdateMergeRequestEvent>, UpdateMergeRequestEventHandler>();
-            services.Configure<MessageTypeOptions>(types =>
-            {
-                types.AddType<MergeRequestEvent>();
-                types.AddType<UpdateMergeRequestEvent>();
-                types.AddType<PushEvent>();
-            });
         }
     }
 }

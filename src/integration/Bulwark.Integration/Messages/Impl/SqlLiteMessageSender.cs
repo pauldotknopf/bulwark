@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using ServiceStack.Data;
+using ServiceStack.DataAnnotations;
 using ServiceStack.OrmLite;
 
 namespace Bulwark.Integration.Messages.Impl
@@ -58,6 +59,7 @@ namespace Bulwark.Integration.Messages.Impl
         
         class Message
         {
+            [AutoIncrement]
             public int Id { get; set; }
             
             public long ScheduleOn { get; set; }
