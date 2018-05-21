@@ -79,7 +79,9 @@ That's it. Submit a pull request with a CODEOWNERS file and watch users get auto
     "AutoMergePullRequests": false,
     "MergeCommitMessage": null,
     "ShouldRemoveSourceBranch": null,
-    "UseHttp": true
+    "UseHttp": true,
+    "HttpUsername: null,
+    "HttpPassword": null
   }
 }
 ```
@@ -93,6 +95,8 @@ That's it. Submit a pull request with a CODEOWNERS file and watch users get auto
 * `"MergeCommitMessage"`: Self explanatory, empty if you want GitLab to auto-generate a merge commit message.
 * `"ShouldRemoveSourceBranch"`: Self explanatory, empty if you want to let GitLab to use the configured value for the merge request.
 * `"UseHttp"`: Use http to clone git repositories. Otherwise, ssh.
+* `"HttpUsername"`: The username to use when cloning via http.
+* `"HttpPassword"`: The password to use when cloding via http.
 
 ### Repository cache
 
