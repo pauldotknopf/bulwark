@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+echo "Starting RabbitMQ..."
+docker-compose up -d rabbitmq
+
+echo "Giving RabbitMQ some time to start up fully..."
+sleep 10
+
+echo "Starting up Bulwark..."
+docker-compose up -d bulwark-web
+docker-compose up -d bulwark-worker
+
+docker-compose logs -f
