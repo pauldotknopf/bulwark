@@ -13,13 +13,13 @@ using ServiceStack.OrmLite;
 
 namespace Bulwark.Integration.Messages.Impl
 {
-    public class SqlLiteMessageSender : IMessageSender, IMessageRunner
+    public class SqliteMessageSender : IMessageSender, IMessageRunner
     {
         readonly IServiceScopeFactory _serviceScopeFactory;
         readonly IDbConnectionFactory _dbFactory;
-        readonly ILogger<SqlLiteMessageSender> _logger;
+        readonly ILogger<SqliteMessageSender> _logger;
         
-        public SqlLiteMessageSender(
+        public SqliteMessageSender(
             IOptions<MessageQueueOptions> messageQueueOptions,
             ILoggerFactory loggerFactory,
             IServiceScopeFactory serviceScopeFactory)
@@ -30,7 +30,7 @@ namespace Bulwark.Integration.Messages.Impl
             _dbFactory = new OrmLiteConnectionFactory(
                 messageQueueOptionsValue.SqlLiteDBLocation,  
                 SqliteDialect.Provider);
-            _logger = loggerFactory.CreateLogger<SqlLiteMessageSender>();
+            _logger = loggerFactory.CreateLogger<SqliteMessageSender>();
             
             using (var db = _dbFactory.Open())
             {
@@ -72,14 +72,14 @@ namespace Bulwark.Integration.Messages.Impl
         class RunnerSession : IMessageRunnerSession
         {
             readonly IDbConnectionFactory _dbFactory;
-            readonly ILogger<SqlLiteMessageSender> _logger;
+            readonly ILogger<SqliteMessageSender> _logger;
             readonly IServiceScopeFactory _serviceScopeFactory;
             readonly Thread _thread;
             readonly CancellationTokenSource _cancellationToken = new CancellationTokenSource();
             readonly MethodInfo _processMessageMethod;
             
             public RunnerSession(IDbConnectionFactory dbFactory,
-                ILogger<SqlLiteMessageSender> logger,
+                ILogger<SqliteMessageSender> logger,
                 IServiceScopeFactory serviceScopeFactory)
             {
                 _processMessageMethod = typeof(RunnerSession).GetMethod("ProcessMessage", BindingFlags.Instance | BindingFlags.NonPublic);

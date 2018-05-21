@@ -26,7 +26,7 @@
             public enum MessageQueueType
             {
                 InMemory, // Not recommended for production
-                RabbitMQ,
+                RabbitMq,
                 Sqlite
             }
         }

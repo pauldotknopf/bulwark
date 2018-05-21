@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -22,18 +21,18 @@ namespace Bulwark.Integration.Messages.Impl
             switch (value.Type)
             {
                 case MessageQueueOptions.Types.MessageQueueType.InMemory:
-                    logger.LogWarning("Don't use the in-memory message handler in production. Try RabbitMQ, or send a PR for something else.");
+                    logger.LogWarning("Don't use the in-memory message handler in production. Try RabbitMQ, Sqlite, or send a PR for something else.");
                     var inMemory = new InMemoryMessageSender(serviceScopeFactory, loggerFactory);
                     _innerSender = inMemory;
                     _innerRunner = inMemory;
                     break;
-                case MessageQueueOptions.Types.MessageQueueType.RabbitMQ:
+                case MessageQueueOptions.Types.MessageQueueType.RabbitMq:
                     var rabbitMq = new RabbitMqMessageSender(messageQueueOptions, serviceScopeFactory, loggerFactory);
                     _innerSender = rabbitMq;
                     _innerRunner = rabbitMq;
                     break;
                 case MessageQueueOptions.Types.MessageQueueType.Sqlite:
-                    var sqlite = new SqlLiteMessageSender(messageQueueOptions, loggerFactory, serviceScopeFactory);
+                    var sqlite = new SqliteMessageSender(messageQueueOptions, loggerFactory, serviceScopeFactory);
                     _innerSender = sqlite;
                     _innerRunner = sqlite;
                     break;
