@@ -89,5 +89,5 @@ That's it. Submit a pull request with a CODEOWNERS file and watch users get auto
 * `"AuthenticationToken"`: Generate this from your account settings.
 * `"TargetBranchesFilter"`: A regular expression to match against branches you wish to process. You may want to set this to `master`.
 * `"AutoMergePullRequests"`: If all the required approvers have approved, you can configure Bulwark to auto merge the merge request. You might want to update your `Project > Settings > Repository > Protected Branches` settings to only authorize Bulwark to merge your merge requests to your desired branch.
-* `""`: Self explanatory, empty if you want GitLab to auto-generate a merge commit message.
+* `"MergeCommitMessage"`: Self explanatory, empty if you want GitLab to auto-generate a merge commit message.
 * `"ShouldRemoveSourceBranch"`: Self explanatory, empty if you want to let GitLab to use the configured value for the merge request.
