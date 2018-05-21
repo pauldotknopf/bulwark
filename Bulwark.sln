@@ -20,6 +20,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{58998681
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Build", "build\scripts\Build.csproj", "{9F2C4212-50B2-483A-932B-1382D2DFEE06}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{B5075F4F-C508-47F1-A685-454DAA7E0715}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example", "example", "{D9BD12D8-0109-4AAA-9F31-4EC60D2F9BDE}"
+ProjectSection(SolutionItems) = preProject
+	build\docker\example\docker-compose.yml = build\docker\example\docker-compose.yml
+	build\docker\example\data\config.json = build\docker\example\data\config.json
+EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,5 +67,7 @@ Global
 		{76E9A01F-293A-42F0-BDAB-DE28D047E091} = {67C5B1B8-CC48-4E93-93C4-E47164654843}
 		{2E06C4F3-0430-4BB6-B37B-56B08FADD55D} = {67C5B1B8-CC48-4E93-93C4-E47164654843}
 		{9F2C4212-50B2-483A-932B-1382D2DFEE06} = {58998681-9F77-418D-A4B7-C8AD4E8E9D13}
+		{B5075F4F-C508-47F1-A685-454DAA7E0715} = {58998681-9F77-418D-A4B7-C8AD4E8E9D13}
+		{D9BD12D8-0109-4AAA-9F31-4EC60D2F9BDE} = {B5075F4F-C508-47F1-A685-454DAA7E0715}
 	EndGlobalSection
 EndGlobal

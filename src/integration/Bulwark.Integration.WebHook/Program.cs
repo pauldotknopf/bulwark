@@ -109,10 +109,6 @@ namespace Bulwark.Integration.WebHook
             }
             
             Log.Logger = loggerConfiguration.CreateLogger();
-            
-            Log.Logger.Error("This is an error");
-            Log.Logger.Information("This is info");
-            Log.Logger.Debug("This is debug");
         }
         
         private static IHost BuildWorkerHost()
