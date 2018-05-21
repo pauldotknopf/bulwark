@@ -2,6 +2,12 @@
 {
     public class GitLabOptions
     {
+        public GitLabOptions()
+        {
+            Enabled = true;
+            ServerUrl = "https://gitlab.com/";
+        }
+        
         public bool Enabled { get; set; }
         
         public string ServerUrl { get; set; }

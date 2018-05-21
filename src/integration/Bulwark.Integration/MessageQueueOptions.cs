@@ -4,7 +4,7 @@
     {
         public MessageQueueOptions()
         {
-            Type = Types.MessageQueueType.InMemory;
+            Type = Types.MessageQueueType.Sqlite;
             RabbitMqPort = 5672;
             SqlLiteDBLocation = "sqlite.db";
         }

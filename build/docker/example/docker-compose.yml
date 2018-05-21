@@ -1,7 +1,7 @@
 version: '3'
 services:
   bulwark-web:
-    image: pauldotknopf/bulwark:build
+    image: pauldotknopf/bulwark:latest
     volumes:
        - ./data:/work
        - data:/data
@@ -9,7 +9,7 @@ services:
     ports:
      - "5000:5000"
   bulwark-worker:
-    image: pauldotknopf/bulwark:build
+    image: pauldotknopf/bulwark:latest
     volumes:
        - ./data:/work
        - data:/data
