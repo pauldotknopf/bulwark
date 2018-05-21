@@ -75,6 +75,7 @@ That's it. Submit a pull request with a CODEOWNERS file and watch users get auto
     "Enabled": true,
     "ServerUrl": "https://gitlab.com/",
     "AuthenticationToken": null,
+    "SecretToken": null,
     "TargetBranchesFilter": null,
     "AutoMergePullRequests": false,
     "MergeCommitMessage": null,
@@ -90,6 +91,7 @@ That's it. Submit a pull request with a CODEOWNERS file and watch users get auto
 
 * `"ServerUrl"`: You can point this to ```gitlab.com``` or your own hosted GitLab instance.
 * `"AuthenticationToken"`: Generate this from your account settings.
+* `"SecretToken"`: The secret token, configured in GitLab, for the web hook. This ensures that only GitLab can post to your hook.
 * `"TargetBranchesFilter"`: A regular expression to match against branches you wish to process. You may want to set this to `"master"`.
 * `"AutoMergePullRequests"`: If all the required approvers have approved, you can configure Bulwark to auto merge the merge request. You might want to update your `Project > Settings > Repository > Protected Branches` settings to only authorize Bulwark to merge your merge requests to your desired branch.
 * `"MergeCommitMessage"`: Self explanatory, empty if you want GitLab to auto-generate a merge commit message.
