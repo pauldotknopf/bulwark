@@ -2,13 +2,32 @@ version: '3'
 services:
   bulwark-web:
     image: pauldotknopf/bulwark:build
+    container_name: bulwark-web
     volumes:
        - ./data:/work
+       - data:/data
     command: --web-only
     ports:
      - "5000:5000"
+    depends_on:
+      - rabbitmq
   bulwark-worker:
     image: pauldotknopf/bulwark:build
+    container_name: bulwark-worker
     volumes:
        - ./data:/work
+       - data:/data
     command: --worker-only
+    depends_on:
+      - rabbitmq
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+     - "5672:5672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=username
+      - RABBITMQ_DEFAULT_PASS=password
+  
+volumes:
+  data:

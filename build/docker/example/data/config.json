@@ -1,6 +1,9 @@
 {
     "MessageQueue": {
-        "Type": "LiteDB"
+        "Type": "RabbitMQ",
+        "RabbitMqHost": "rabbitmq",
+        "RabbitMqUsername": "username",
+        "RabbitMqPassword": "password"
     },
     "GitLab": {
         "Enabled": true,
@@ -8,5 +11,8 @@
         "AuthenticationToken": "AdNAuSLZxGvU1cHycNxU",
         "TargetBranchesFilter": "master",
         "AutoMergePullRequests": true
+    },
+    "RepositoryCache": {
+        "RepositoryCacheLocation": "/data/repository-cache"
     }
 }
