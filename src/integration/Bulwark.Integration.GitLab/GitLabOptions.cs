@@ -6,6 +6,7 @@
         {
             Enabled = true;
             ServerUrl = "https://gitlab.com/";
+            UseHttp = true;
         }
         
         public bool Enabled { get; set; }
@@ -23,5 +24,11 @@
         public bool? MergeWhenPipelineSuceeds { get; set; }
         
         public bool? ShouldRemoveSourceBranch { get; set; }
+        
+        public bool UseHttp { get; set; }
+        
+        public string HttpUsername { get; set; }
+        
+        public string HttpPassword { get; set; }
     }
 }
