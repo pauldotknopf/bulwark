@@ -15,6 +15,8 @@
         
         public string AuthenticationToken { get; set; }
         
+        public string SecretToken { get; set; }
+        
         public string TargetBranchesFilter { get; set; }
         
         public bool AutoMergePullRequests { get; set; }
