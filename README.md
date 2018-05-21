@@ -23,15 +23,11 @@ The `CODEOWNERS` file acts exactly as `.gitignore`. Similary, the file can also 
 1. Run the web hook server. Example `docker-compose.yml` file [here](build/docker/example/docker-compose.yml). Configurable options [here](todo).
    * At a bare minimum, you should have the following configured for Bulwark to properly communicate with GitLab.
    ```
-   "MessageQueue": {
-        "Type": "Sqlite"
-    },
     "GitLab": {
-        "Enabled": true,
-        "ServerUrl": "http://gitlab.com/",
         "AuthenticationToken": "your-auth-token"
     },
    ```
+   This configuration should go in a `config.json` file in the working directory of the running Bulwark instance.
 2. On GitLab under `Project > Settings > Integrations`, add a web hook that points to `https://your-bulwark-instance.com/gitlab` and tick the following:
    * [x] Push events
    * [x] Merge request events
