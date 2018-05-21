@@ -7,6 +7,7 @@ using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 
@@ -68,11 +69,7 @@ namespace Bulwark.Integration.WebHook
                 return 0;
             });
 
-            cliApp.Execute(args);
-            
-            Console.WriteLine("exiting...");
-
-            return 0;
+            return cliApp.Execute(args);
         }
 
         private static void PrepLogger()
@@ -127,6 +124,11 @@ namespace Bulwark.Integration.WebHook
             
             return new HostBuilder()
                 .UseConsoleLifetime()
+                .ConfigureLogging(loggingBuilder =>
+                {
+                    loggingBuilder.ClearProviders();
+                    loggingBuilder.AddSerilog(dispose: true);
+                })
                 .UseEnvironment(environmentName)
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .ConfigureAppConfiguration((builderContext, config) =>
@@ -139,7 +141,6 @@ namespace Bulwark.Integration.WebHook
                 })
                 .ConfigureServices((context, services) =>
                 {
-                    services.AddLogging(loggingBuilder => { loggingBuilder.AddSerilog(dispose: true); });
                     // ReSharper disable RedundantNameQualifier
                     Bulwark.Services.Register(services);
                     Bulwark.Integration.Services.Register(services, context.Configuration);
@@ -153,13 +154,17 @@ namespace Bulwark.Integration.WebHook
         private static IWebHost BuildWebHost(bool runWorker = true)
         {
             return WebHost.CreateDefaultBuilder()
+                .ConfigureLogging(loggingBuilder =>
+                {
+                    loggingBuilder.ClearProviders();
+                    loggingBuilder.AddSerilog(dispose: true);
+                })
                 .ConfigureAppConfiguration((builderContext, config) =>
                 {
                     config.AddJsonFile("config.json", true);
                 })
                 .ConfigureServices((context, services) =>
                 {
-                    services.AddLogging(loggingBuilder => { loggingBuilder.AddSerilog(dispose: true); });
                     services.AddMvc();
                     // ReSharper disable RedundantNameQualifier
                     Bulwark.Services.Register(services);
