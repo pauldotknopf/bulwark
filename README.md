@@ -78,7 +78,8 @@ That's it. Submit a pull request with a CODEOWNERS file and watch users get auto
     "TargetBranchesFilter": null,
     "AutoMergePullRequests": false,
     "MergeCommitMessage": null,
-    "ShouldRemoveSourceBranch": null
+    "ShouldRemoveSourceBranch": null,
+    "UseHttp": true
   }
 }
 ```
@@ -91,6 +92,7 @@ That's it. Submit a pull request with a CODEOWNERS file and watch users get auto
 * `"AutoMergePullRequests"`: If all the required approvers have approved, you can configure Bulwark to auto merge the merge request. You might want to update your `Project > Settings > Repository > Protected Branches` settings to only authorize Bulwark to merge your merge requests to your desired branch.
 * `"MergeCommitMessage"`: Self explanatory, empty if you want GitLab to auto-generate a merge commit message.
 * `"ShouldRemoveSourceBranch"`: Self explanatory, empty if you want to let GitLab to use the configured value for the merge request.
+* `"UseHttp"`: Use http to clone git repositories. Otherwise, ssh.
 
 ### Repository cache
 
