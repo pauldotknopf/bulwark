@@ -37,11 +37,27 @@ namespace Bulwark.Integration.WebHook.Controllers
             }
             
             string eventType = null;
-            if (Request.Headers.TryGetValue("X-Gitlab-Event", out StringValues temp))
+            if (Request.Headers.TryGetValue("X-Gitlab-Event", out StringValues eventTypeTemp))
             {
-                eventType = temp;
+                eventType = eventTypeTemp;
+            }
+            
+            string secretToken = null;
+            if (Request.Headers.TryGetValue("X-Gitlab-Token", out StringValues secretTokenTemp))
+            {
+                secretToken = secretTokenTemp;
             }
 
+            if (!string.IsNullOrEmpty(_options.SecretToken))
+            {
+                // We are validating the sender knows our secret token.
+                if (_options.SecretToken != secretToken)
+                {
+                    _logger.LogWarning("Invalid request, secret token didn't match");
+                    return Unauthorized();
+                }
+            }
+            
             switch (eventType)
             {
                 case "Push Hook":

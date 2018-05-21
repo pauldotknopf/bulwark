@@ -58,14 +58,29 @@ namespace Bulwark.Integration.GitLab.Impl
                 ? targetProject
                 : await _api.GetProject(new ProjectRequest {ProjectId = mergeRequest.SourceProjectId});
             
-            var sourceCloneUrl = sourceProject.HttpUrlToRepo;
-            var targetCloneUrl = targetProject.HttpUrlToRepo;
-
+            var sourceCloneUrl = sourceProject.SshUrlToRepo;
+            var targetCloneUrl = targetProject.SshUrlToRepo;
+            UsernamePasswordCredentials credentials = null;
+                
+            if (_options.UseHttp)
+            {
+                sourceCloneUrl = sourceProject.HttpUrlToRepo;
+                targetCloneUrl = targetProject.HttpUrlToRepo;
+                if (!string.IsNullOrEmpty(_options.HttpUsername) && !string.IsNullOrEmpty(_options.HttpPassword))
+                {
+                    credentials = new UsernamePasswordCredentials
+                    {
+                        Username = _options.HttpUsername,
+                        Password = _options.HttpPassword
+                    };
+                }
+            }
+            
             using (var repo = await _repositoryCache.GetDirectoryForRepo(mergeRequest.Id.ToString()))
             {
-                await FetchRemote(repo.Repository, $"{targetCloneUrl.GetHashCode():X}", targetCloneUrl);
+                await FetchRemote(repo.Repository, $"{targetCloneUrl.GetHashCode():X}", targetCloneUrl, credentials);
                 if (!targetCloneUrl.Equals(sourceCloneUrl, StringComparison.OrdinalIgnoreCase))
-                    await FetchRemote(repo.Repository,  $"{sourceCloneUrl.GetHashCode():X}", sourceCloneUrl);
+                    await FetchRemote(repo.Repository,  $"{sourceCloneUrl.GetHashCode():X}", sourceCloneUrl, credentials);
 
                 var sourceCommit = repo.Repository.Lookup<LibGit2Sharp.Commit>(mergeRequest.Sha);
                 var targetCommit = repo.Repository.Branches[$"{targetCloneUrl.GetHashCode():X}/{mergeRequest.TargetBranch}"].Tip;
@@ -203,14 +218,20 @@ namespace Bulwark.Integration.GitLab.Impl
             }
         }
         
-        private Task FetchRemote(IRepository repo, string remoteName, string remoteUrl)
+        private Task FetchRemote(IRepository repo, string remoteName, string remoteUrl, UsernamePasswordCredentials credentials)
         {
             return Task.Run(() =>
             {
                 if (repo.Network.Remotes.All(x => x.Name != remoteName))
                     repo.Network.Remotes.Add(remoteName, remoteUrl);
 
-                Commands.Fetch((LibGit2Sharp.Repository) repo, remoteName, new List<string>(), new FetchOptions(), "");
+                var fetchOptions = new FetchOptions();
+                if (credentials != null)
+                {
+                    fetchOptions.CredentialsProvider = (url, usernameFromUrl, types) => credentials;
+                }
+                
+                Commands.Fetch((LibGit2Sharp.Repository) repo, remoteName, new List<string>(), fetchOptions, "");
 
                 return Task.CompletedTask;
             });
