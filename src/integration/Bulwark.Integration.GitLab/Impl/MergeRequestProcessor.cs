@@ -10,9 +10,7 @@ using Bulwark.Integration.Repository;
 using Bulwark.Strategy.CodeOwners;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Internal;
 using Microsoft.Extensions.Options;
-using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Bulwark.Integration.GitLab.Impl
 {

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Threading.Tasks;
 using Bulwark.Integration.GitLab.Api;
 using Bulwark.Integration.GitLab.Api.Requests;
