@@ -48,6 +48,7 @@ namespace Bulwark.Integration.GitLab.Impl
             if (mergeRequest.State != MergeRequestState.Opened)
             {
                 _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Skipping because merge request not opened.", mergeRequest.Iid, mergeRequest.ProjectId);
+                return;
             }
 
             // Let's see if this is a merge request that we should listen too.
