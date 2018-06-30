@@ -20,5 +20,6 @@ ADD webhook/linux-x64 /bulwark
 # The libgit2sharp bundled libgit2 doesn't work, we use our own (built in another stage).
 COPY --from=0 /libgit2/libgit2-b0d9952.so /bulwark
 RUN mkdir /work
+EXPOSE 5000
 ENTRYPOINT ["/bulwark/Bulwark.Integration.WebHook"]
 WORKDIR /work
