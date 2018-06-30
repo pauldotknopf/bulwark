@@ -229,17 +229,26 @@ namespace Bulwark.Integration.GitLab.Impl
                     {
                         _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: All approved, merging the request.", mergeRequest.Iid, mergeRequest.ProjectId);
 
+                        var mergeCommitMessage = _options.MergeCommitMessage;
+
+                        if (string.IsNullOrEmpty(mergeCommitMessage))
+                        {
+                            mergeCommitMessage = null;
+                        }
+                        else
+                        {
+                            mergeCommitMessage = mergeCommitMessage
+                                .Replace("{MergeRequestTitle}", mergeRequest.Title)
+                                .Replace("{MergeRequestReference}", $"!{mergeRequest.Iid}");
+                        }
+                        
                         // This MR can be merged!
                         await _api.AcceptMergeRequest(new AcceptMergeRequestRequest
                         {
                             ProjectId = mergeRequest.ProjectId,
                             MergeRequestIid = mergeRequest.Iid,
                             Sha = mergeRequest.Sha, // This is to ensure we are merging what we expect.
-                            // Passing null when empty ensures field won't get sent to GitLab, ensuring
-                            // it will use the default commit message, instead of an empty one.
-                            MergeCommitMessage = string.IsNullOrEmpty(_options.MergeCommitMessage) 
-                                ? null 
-                                : _options.MergeCommitMessage,
+                            MergeCommitMessage = mergeCommitMessage,
                             MergeWhenPipelineSuceeds = _options.MergeWhenPipelineSuceeds,
                             ShouldRemoveSourceBranch = _options.ShouldRemoveSourceBranch
                         });
