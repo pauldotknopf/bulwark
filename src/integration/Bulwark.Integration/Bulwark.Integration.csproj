@@ -6,11 +6,11 @@
     <ProjectReference Include="..\..\Bulwark\Bulwark.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="MassTransit" Version="5.1.1" />
-    <PackageReference Include="MassTransit.RabbitMQ" Version="5.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="2.1.0-rc1-final" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.1.0-rc1-final" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.1.0-rc1-final" />
+    <PackageReference Include="MassTransit" Version="5.1.3" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="5.1.3" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.1.1" />
     <PackageReference Include="ServiceStack.OrmLite.Sqlite" Version="5.1.0" />
   </ItemGroup>
 </Project>
