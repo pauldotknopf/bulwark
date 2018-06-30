@@ -150,6 +150,11 @@ namespace Bulwark.Integration.Messages.Impl
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Message processer thread died.");
+                    // We currently have a Thread.Sleep in the loop,
+                    // but that is ignored if exceptions happen.
+                    // So, we sleep here.
+                    // Also, I'm sleeping a little longer.
+                    Thread.Sleep(5000);
                 }
             }
 
