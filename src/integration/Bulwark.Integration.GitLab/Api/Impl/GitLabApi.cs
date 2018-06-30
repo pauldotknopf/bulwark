@@ -100,7 +100,7 @@ namespace Bulwark.Integration.GitLab.Api.Impl
 
         private async Task<T> Post<T>(string url, object data)
         {
-            _logger.LogTrace("Post: {Url} with data: {Data}", url, data);
+            _logger.LogTrace("Post: {Url} with data: {@Data}", url, data);
             
             using (var client = GetClient())
             {
@@ -124,7 +124,7 @@ namespace Bulwark.Integration.GitLab.Api.Impl
         
         private async Task<T> Put<T>(string url, object data)
         {
-            _logger.LogTrace("Put: {Url} with data: {Data}", url, data);
+            _logger.LogTrace("Put: {Url} with data: {@Data}", url, data);
             
             using (var client = GetClient())
             {
