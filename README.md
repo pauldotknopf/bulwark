@@ -79,6 +79,7 @@ That's it. Submit a pull request with a CODEOWNERS file and watch users get auto
     "TargetBranchesFilter": null,
     "AutoMergePullRequests": false,
     "MergeCommitMessage": null,
+    "MergeWhenPipelineSuceeds": null,
     "ShouldRemoveSourceBranch": null,
     "UseHttp": true,
     "HttpUsername: null,
@@ -95,6 +96,7 @@ That's it. Submit a pull request with a CODEOWNERS file and watch users get auto
 * `"TargetBranchesFilter"`: A regular expression to match against branches you wish to process. You may want to set this to `"master"`.
 * `"AutoMergePullRequests"`: If all the required approvers have approved, you can configure Bulwark to auto merge the merge request. You might want to update your `Project > Settings > Repository > Protected Branches` settings to only authorize Bulwark to merge your merge requests to your desired branch.
 * `"MergeCommitMessage"`: Self explanatory, empty if you want GitLab to auto-generate a merge commit message. You can alse use tokens `{MergeRequestTitle}` and `{MergeRequestReference}` for a message like `{MergeRequestTitle}\nSee {MergeRequestReference} for more detais.`.
+* `"MergeWhenPipelineSuceeds"`: When performing the merge, only do so when pipelines succeed.
 * `"ShouldRemoveSourceBranch"`: Self explanatory, empty if you want to let GitLab to use the configured value for the merge request.
 * `"UseHttp"`: Use http to clone git repositories. Otherwise, ssh.
 * `"HttpUsername"`: The username to use when cloning via http.
