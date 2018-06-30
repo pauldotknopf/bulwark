@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Bulwark.Integration.GitLab.Api.Requests;
 using Bulwark.Integration.GitLab.Api.Types;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -16,10 +17,13 @@ namespace Bulwark.Integration.GitLab.Api.Impl
 {
     public class GitLabApi : IGitLabApi
     {
+        readonly ILogger<GitLabApi> _logger;
         readonly GitLabOptions _options;
         
-        public GitLabApi(IOptions<GitLabOptions> options)
+        public GitLabApi(IOptions<GitLabOptions> options,
+            ILogger<GitLabApi> logger)
         {
+            _logger = logger;
             _options = options.Value;
             if (string.IsNullOrEmpty(_options.ServerUrl))
             {
@@ -96,6 +100,8 @@ namespace Bulwark.Integration.GitLab.Api.Impl
 
         private async Task<T> Post<T>(string url, object data)
         {
+            _logger.LogTrace("Post: {Url} with data: {Data}", url, data);
+            
             using (var client = GetClient())
             {
                 using (var input = new StringContent(
@@ -108,7 +114,7 @@ namespace Bulwark.Integration.GitLab.Api.Impl
                         using (var output = response.Content)
                         {
                             var json = await output.ReadAsStringAsync();
-                            Debug.WriteLine(json);
+                            _logger.LogTrace("Response: {Json}", json);
                             return JsonConvert.DeserializeObject<T>(json);
                         }
                     }
@@ -118,6 +124,8 @@ namespace Bulwark.Integration.GitLab.Api.Impl
         
         private async Task<T> Put<T>(string url, object data)
         {
+            _logger.LogTrace("Put: {Url} with data: {Data}", url, data);
+            
             using (var client = GetClient())
             {
                 using (var input = new StringContent(
@@ -130,7 +138,7 @@ namespace Bulwark.Integration.GitLab.Api.Impl
                         using (var output = response.Content)
                         {
                             var json = await output.ReadAsStringAsync();
-                            Debug.WriteLine(json);
+                            _logger.LogTrace("Response: {Json}", json);
                             return JsonConvert.DeserializeObject<T>(json);
                         }
                     }
@@ -151,6 +159,8 @@ namespace Bulwark.Integration.GitLab.Api.Impl
                 url += $"?{q}";
             }
             
+            _logger.LogTrace("Get: {Url}", url);
+            
             using (var client = GetClient())
             {
                 using (var response = await client.GetAsync(url))
@@ -158,7 +168,7 @@ namespace Bulwark.Integration.GitLab.Api.Impl
                     using (var content = response.Content)
                     {
                         var json = await content.ReadAsStringAsync();
-                        Debug.WriteLine(json);
+                        _logger.LogTrace("Response: {Json}", json);
                         return JsonConvert.DeserializeObject<T>(json);
                     }
                 }

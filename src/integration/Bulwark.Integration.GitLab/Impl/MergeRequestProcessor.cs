@@ -10,7 +10,9 @@ using Bulwark.Integration.Repository;
 using Bulwark.Strategy.CodeOwners;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Internal;
 using Microsoft.Extensions.Options;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Bulwark.Integration.GitLab.Impl
 {
@@ -39,16 +41,23 @@ namespace Bulwark.Integration.GitLab.Impl
         {
             var mergeRequest = await _api.GetMergeRequest(projectId, mergeRequestIid);
 
-            if (mergeRequest.WorkInProgress) return;
+            if (mergeRequest.WorkInProgress)
+            {
+                _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Skipping because work in progress.", mergeRequest.Iid, mergeRequest.ProjectId);
+                return;
+            }
 
-            if (mergeRequest.State != MergeRequestState.Opened) return;
+            if (mergeRequest.State != MergeRequestState.Opened)
+            {
+                _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Skipping because merge request not opened.", mergeRequest.Iid, mergeRequest.ProjectId);
+            }
 
             // Let's see if this is a merge request that we should listen too.
             if (!string.IsNullOrEmpty(_options.TargetBranchesFilter))
             {
                 if (!Regex.IsMatch(mergeRequest.TargetBranch, _options.TargetBranchesFilter))
                 {
-                    _logger.LogDebug("Skipping {TargetBranch} due to filter.", mergeRequest.TargetBranch);
+                    _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Skipping {TargetBranch} due to filter.", mergeRequest.Iid, mergeRequest.ProjectId, mergeRequest.TargetBranch);
                     return;
                 }
             }
@@ -78,15 +87,25 @@ namespace Bulwark.Integration.GitLab.Impl
             
             using (var repo = await _repositoryCache.GetDirectoryForRepo(mergeRequest.Id.ToString()))
             {
+                _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Fething repo to {Location}.", mergeRequest.Iid, mergeRequest.ProjectId, repo.Location);
+
                 await FetchRemote(repo.Repository, $"{targetCloneUrl.GetHashCode():X}", targetCloneUrl, credentials);
                 if (!targetCloneUrl.Equals(sourceCloneUrl, StringComparison.OrdinalIgnoreCase))
                     await FetchRemote(repo.Repository,  $"{sourceCloneUrl.GetHashCode():X}", sourceCloneUrl, credentials);
 
+                _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Checking out commits.", mergeRequest.Iid, mergeRequest.ProjectId);
+
                 var sourceCommit = repo.Repository.Lookup<LibGit2Sharp.Commit>(mergeRequest.Sha);
                 var targetCommit = repo.Repository.Branches[$"{targetCloneUrl.GetHashCode():X}/{mergeRequest.TargetBranch}"].Tip;
 
+                _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Getting a list of code owners.", mergeRequest.Iid, mergeRequest.ProjectId);
+                
                 var codeOwnerUsers = await _changeset.GetUsersBetweenCommits(targetCommit, sourceCommit);
 
+                _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Found {Users}.", mergeRequest.Iid, mergeRequest.ProjectId, codeOwnerUsers);
+                
+                _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Getting the current approvers.", mergeRequest.Iid, mergeRequest.ProjectId);
+                
                 var mergeRequestApprovals = await _api.GetMergeRequestApprovals(mergeRequest.ProjectId, mergeRequest.Iid);
 
                 var userIdLookup = new Dictionary<string, int>();
@@ -94,6 +113,8 @@ namespace Bulwark.Integration.GitLab.Impl
                 var currentApprovers = mergeRequestApprovals.Approvers
                     .Select(x => x.User)
                     .ToList();
+                
+                _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: {Users} are currently assigned to the merge request.", mergeRequest.Iid, mergeRequest.ProjectId, currentApprovers.Select(x => x.Username));
                 
                 // The author of the pull request will not be added as an approver.
                 // It is assumed that they already approve of the changes.
@@ -124,10 +145,13 @@ namespace Bulwark.Integration.GitLab.Impl
 
                 if (!usersChanged)
                 {
+                    _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: No changes in approvers.", mergeRequest.Iid, mergeRequest.ProjectId);
+                    
                     // No users may have changed, but the approvers request count may be off, ensure it is up to date.
                     // There may be no changes, but the required approvers count may be off.
                     if (mergeRequestApprovals.ApprovalsRequired != mergeRequestApprovals.Approvers.Count)
                     {
+                        _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: The number of approvers required on mr is off, updating.", mergeRequest.Iid, mergeRequest.ProjectId);
                         mergeRequestApprovals = await _api.UpdateMergeRequestApprovals(new ChangeApprovalConfigurationRequest
                         {
                             ProjectId = mergeRequest.ProjectId,
@@ -165,6 +189,8 @@ namespace Bulwark.Integration.GitLab.Impl
                         }
                     }
 
+                    _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Updating approvers with {UserIdLookup}.", mergeRequest.Iid, mergeRequest.ProjectId, codeOwnerUsers);
+                    
                     mergeRequestApprovals = await _api.UpdateMergeRequestAllowApprovers(new UpdateApproversRequest
                     {
                         ProjectId = mergeRequest.ProjectId,
@@ -175,6 +201,7 @@ namespace Bulwark.Integration.GitLab.Impl
                     // Let's see if we need to update the approver count.
                     if (mergeRequestApprovals.ApprovalsRequired != mergeRequestApprovals.Approvers.Count)
                     {
+                        _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: The number of approvers required on mr is off, updating.", mergeRequest.Iid, mergeRequest.ProjectId);
                         mergeRequestApprovals = await _api.UpdateMergeRequestApprovals(new ChangeApprovalConfigurationRequest
                         {
                             ProjectId = mergeRequest.ProjectId,
@@ -186,6 +213,8 @@ namespace Bulwark.Integration.GitLab.Impl
 
                 if (_options.AutoMergePullRequests && mergeRequestApprovals.ApprovalsLeft == 0)
                 {
+                    _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Checking to see if all the required users approved before we auto merge.", mergeRequest.Iid, mergeRequest.ProjectId);
+                    
                     // We have no more approvals, let's merge this merge request.
                     // But first, let's make sure that the approvers are on the required list.
                     bool allApproved = true;
@@ -199,6 +228,8 @@ namespace Bulwark.Integration.GitLab.Impl
 
                     if (allApproved)
                     {
+                        _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: All approved, merging the request.", mergeRequest.Iid, mergeRequest.ProjectId);
+
                         // This MR can be merged!
                         await _api.AcceptMergeRequest(new AcceptMergeRequestRequest
                         {
@@ -215,6 +246,8 @@ namespace Bulwark.Integration.GitLab.Impl
                         });
                     }
                 }
+                
+                _logger.LogDebug("MR:{MergeRequestIid}:Project:{ProjectId}: Finished with {ApprovalsLeft} approvals left.", mergeRequest.Iid, mergeRequest.ProjectId, mergeRequestApprovals.ApprovalsLeft);
             }
         }
         
