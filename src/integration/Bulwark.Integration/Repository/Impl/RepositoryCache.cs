@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
-using Bulwark.Integration.GitLab;
 using LibGit2Sharp;
 using Microsoft.Extensions.Options;
 
@@ -31,7 +30,7 @@ namespace Bulwark.Integration.Repository.Impl
                     Directory.CreateDirectory(directory);
                     LibGit2Sharp.Repository.Init(directory);
                 }
-                session = new Session(new LibGit2Sharp.Repository(directory));
+                session = new Session(new LibGit2Sharp.Repository(directory), directory);
             });
 
             return session;
@@ -39,12 +38,15 @@ namespace Bulwark.Integration.Repository.Impl
         
         class Session : IRepositorySession
         {
-            public Session(LibGit2Sharp.Repository repo)
+            public Session(LibGit2Sharp.Repository repo, string location)
             {
                 Repository = repo;
+                Location = location;
             }
             
             public IRepository Repository { get; }
+            
+            public string Location { get; }
             
             public void Dispose()
             {
