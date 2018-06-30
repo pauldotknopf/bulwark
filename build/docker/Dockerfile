@@ -18,7 +18,7 @@ RUN cd /libgit2 && \
 FROM microsoft/dotnet:2.1.300-sdk-bionic
 ADD webhook/linux-x64 /bulwark
 # The libgit2sharp bundled libgit2 doesn't work, we use our own (built in another stage).
-COPY --from=0 /libgit2/libgit2-b0d9952.so /bulwark/runtimes/linux-x64/native
+COPY --from=0 /libgit2/libgit2-b0d9952.so /bulwark
 RUN mkdir /work
 ENTRYPOINT ["/bulwark/Bulwark.Integration.WebHook"]
 WORKDIR /work
