@@ -251,19 +251,37 @@ namespace Bulwark.Integration.GitLab.Impl
         
         private Task FetchRemote(IRepository repo, string remoteName, string remoteUrl, UsernamePasswordCredentials credentials)
         {
+            _logger.LogDebug("Adding {RemoteName} ({RemoteUrl}) to repo.", remoteName, remoteUrl);
+            
             return Task.Run(() =>
             {
                 if (repo.Network.Remotes.All(x => x.Name != remoteName))
+                {
+                    _logger.LogDebug("Adding {RemoteName} to repo for first time.", remoteName);
                     repo.Network.Remotes.Add(remoteName, remoteUrl);
+                }
+                else
+                {
+                    _logger.LogDebug("Adding {RemoteName} already exists in repo.", remoteName);
+                }
 
                 var fetchOptions = new FetchOptions();
                 if (credentials != null)
                 {
+                    _logger.LogDebug("Using credentials for {RemoteName}", remoteName);
                     fetchOptions.CredentialsProvider = (url, usernameFromUrl, types) => credentials;
                 }
+                else
+                {
+                    _logger.LogDebug("Using anonymous access");
+                }
+                
+                _logger.LogDebug("Fetching from {RemoteName}...", remoteName);
                 
                 Commands.Fetch((LibGit2Sharp.Repository) repo, remoteName, new List<string>(), fetchOptions, "");
 
+                _logger.LogDebug("Successfuly fetched from {RemoteName}.", remoteName);
+                
                 return Task.CompletedTask;
             });
         }
