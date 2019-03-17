@@ -1,11 +1,14 @@
 sudo: required
+dist: xenial
 language: csharp
 mono: none
-dotnet: 2.1.300
+dotnet: 2.2.105
 if: tag IS blank
 services:
   - docker
 before_install:
   - git fetch --unshallow || true
+  - dotnet tool install -g gitversion.tool --version=5.0.0-beta2-6
+  - export PATH=$HOME/.dotnet/tools:$PATH
 script:
   - ./build.sh ci

@@ -29,6 +29,8 @@ namespace Bulwark.Strategy.CodeOwners.Impl
                         .ToList();
                     var pattern = entries.First();
                     var users = entries.Skip(1)
+                        // CODEOWNERS could also started with "@".
+                        .Select(x => x.TrimStart('@'))
                         .ToList();
                     
                     if(users.Count == 0)
