@@ -9,5 +9,6 @@ services:
 before_install:
   - git fetch --unshallow || true
   - dotnet tool install -g gitversion.tool --version=5.0.0-beta2-6
+  - export PATH=$HOME/.dotnet/tools:$PATH
 script:
   - ./build.sh ci
