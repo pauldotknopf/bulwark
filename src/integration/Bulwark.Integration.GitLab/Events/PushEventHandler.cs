@@ -21,10 +21,6 @@ namespace Bulwark.Integration.GitLab.Events
         
         public async Task Handle(PushEvent message)
         {
-            await Task.Delay(3000);
-            
-            Debug.WriteLine(message);
-
             var targetBranch = message.Push.Ref;
             if (targetBranch.StartsWith("refs/heads/"))
                 targetBranch = targetBranch.Substring("refs/heads/".Length);

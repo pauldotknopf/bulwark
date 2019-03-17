@@ -111,6 +111,7 @@ namespace Bulwark.Integration.GitLab.Api.Impl
                 {
                     using (var response = await client.PostAsync(url, input))
                     {
+                        response.EnsureSuccessStatusCode();
                         using (var output = response.Content)
                         {
                             var json = await output.ReadAsStringAsync();
@@ -135,6 +136,7 @@ namespace Bulwark.Integration.GitLab.Api.Impl
                 {
                     using (var response = await client.PutAsync(url, input))
                     {
+                        response.EnsureSuccessStatusCode();
                         using (var output = response.Content)
                         {
                             var json = await output.ReadAsStringAsync();
@@ -165,6 +167,7 @@ namespace Bulwark.Integration.GitLab.Api.Impl
             {
                 using (var response = await client.GetAsync(url))
                 {
+                    response.EnsureSuccessStatusCode();
                     using (var content = response.Content)
                     {
                         var json = await content.ReadAsStringAsync();

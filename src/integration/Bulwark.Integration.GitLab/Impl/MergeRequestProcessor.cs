@@ -117,8 +117,19 @@ namespace Bulwark.Integration.GitLab.Impl
                 
                 // The author of the pull request will not be added as an approver.
                 // It is assumed that they already approve of the changes.
-                if (codeOwnerUsers.Contains(mergeRequest.Author.Username))
-                    codeOwnerUsers.Remove(mergeRequest.Author.Username);
+                if (_options.EnableSelfApproval)
+                {
+                    // Ensure that the current user is treated as an approver.
+                    if (!codeOwnerUsers.Contains(mergeRequest.Author.Username))
+                        codeOwnerUsers.Add(mergeRequest.Author.Username);
+                }
+                else
+                {
+                    // Don't try the author as a CODEOWNER.
+                    if (codeOwnerUsers.Contains(mergeRequest.Author.Username))
+                        codeOwnerUsers.Remove(mergeRequest.Author.Username);
+                }
+                
                 
                 foreach (var approver in currentApprovers)
                 {

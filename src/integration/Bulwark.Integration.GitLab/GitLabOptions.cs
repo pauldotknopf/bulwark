@@ -32,5 +32,7 @@
         public string HttpUsername { get; set; }
         
         public string HttpPassword { get; set; }
+        
+        public bool EnableSelfApproval { get; set; }
     }
 }
