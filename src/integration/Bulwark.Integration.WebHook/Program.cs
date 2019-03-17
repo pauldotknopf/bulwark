@@ -134,6 +134,7 @@ namespace Bulwark.Integration.WebHook
                     config.AddJsonFile("appsettings.json", true);
                     config.AddJsonFile($"appsettings.{builderContext.HostingEnvironment.EnvironmentName}.json", true);
                     config.AddJsonFile("config.json", true);
+                    config.AddJsonFile("/etc/bulwark/config.json", true);
                 })
                 .ConfigureServices((context, services) =>
                 {
@@ -158,6 +159,7 @@ namespace Bulwark.Integration.WebHook
                 .ConfigureAppConfiguration((builderContext, config) =>
                 {
                     config.AddJsonFile("config.json", true);
+                    config.AddJsonFile("/etc/bulwark/config.json", true);
                 })
                 .ConfigureServices((context, services) =>
                 {
