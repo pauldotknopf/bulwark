@@ -26,7 +26,7 @@ namespace Bulwark.Tests.CodeOwners
 
             result.Entries.Count.ShouldBeEqualTo(1);
             result.Entries[0].Pattern.ShouldBeEqualTo("test/*");
-            result.Entries[0].Users.ShouldBeEqualTo(new List<string> {"@user1", "@user2"});
+            result.Entries[0].Users.ShouldBeEqualTo(new List<string> {"user1", "user2"});
         }
 
         [Fact]
@@ -41,7 +41,7 @@ namespace Bulwark.Tests.CodeOwners
 
             result.Entries.Count.ShouldBeEqualTo(1);
             result.Entries[0].Pattern.ShouldBeEqualTo("test/*");
-            result.Entries[0].Users.ShouldBeEqualTo(new List<string> {"@user1", "@user2"});
+            result.Entries[0].Users.ShouldBeEqualTo(new List<string> {"user1", "user2"});
         }
         
         [Fact]
@@ -56,7 +56,7 @@ namespace Bulwark.Tests.CodeOwners
 
             result.Entries.Count.ShouldBeEqualTo(1);
             result.Entries[0].Pattern.ShouldBeEqualTo("test/*");
-            result.Entries[0].Users.ShouldBeEqualTo(new List<string> {"@user1", "@user2"});
+            result.Entries[0].Users.ShouldBeEqualTo(new List<string> {"user1", "user2"});
         }
     }
 }
