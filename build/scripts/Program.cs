@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Build.Buildary;
 using static Bullseye.Targets;
 using static Build.Buildary.Directory;
@@ -13,7 +12,7 @@ namespace Build
 {
     static class Program
     {
-        static Task<int> Main(string[] args)
+        static System.Threading.Tasks.Task Main(string[] args)
         {
             var options = ParseOptions<Options>(args);
             var gitversion = GetGitVersion("./");
@@ -28,22 +27,22 @@ namespace Build
                 commandBuildArgs += $" --version-suffix \"{gitversion.PreReleaseTag}\"";
             }
             
-            Add("clean", () =>
+            Target("clean", () =>
             {
                 CleanDirectory(ExpandPath("./output"));
             });
             
-            Add("build", () =>
+            Target("build", () =>
             {
                 RunShell($"dotnet build Bulwark.sln {commandBuildArgs}");
             });
             
-            Add("test", () =>
+            Target("test", () =>
             {
                 RunShell("dotnet test test/Bulwark.Tests/");
             });
             
-            Add("deploy", DependsOn("clean"), () =>
+            Target("deploy", DependsOn("clean"), () =>
             {
                 // Deploy our nuget packages.
                 RunShell($"dotnet pack --output {ExpandPath("./output")} {commandBuildArgs}");
@@ -52,7 +51,7 @@ namespace Build
                 RunShell("docker build output --tag pauldotknopf/bulwark:build");
             });
 
-            Add("update-version", () =>
+            Target("update-version", () =>
             {
                 if (FileExists("./build/version.props"))
                 {
@@ -67,7 +66,7 @@ $@"<Project>
 </Project>");
             });
             
-            Add("publish", () =>
+            Target("publish", () =>
             {
                 if(Travis.IsTravis)
                 {
@@ -115,9 +114,9 @@ $@"<Project>
                 RunShell("docker push pauldotknopf/bulwark:latest");
             });
             
-            Add("ci", DependsOn("update-version", "test", "deploy", "publish"));
+            Target("ci", DependsOn("update-version", "test", "deploy", "publish"));
             
-            Add("default", DependsOn("build"));
+            Target("default", DependsOn("build"));
 
             return Run(options);
         }
