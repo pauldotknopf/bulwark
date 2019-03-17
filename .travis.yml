@@ -8,7 +8,6 @@ services:
   - docker
 before_install:
   - git fetch --unshallow || true
-  - dotnet tool install -g gitversion.tool
-  - 
+  - dotnet tool install -g gitversion.tool --version=5.0.0-beta2-6
 script:
   - ./build.sh ci
