@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Bulwark.Strategy.CodeOwners.Impl
@@ -24,14 +25,14 @@ namespace Bulwark.Strategy.CodeOwners.Impl
 
                     if (line.StartsWith("#")) continue;
 
-                    var entries = line.Split(new[] {" "}, StringSplitOptions.RemoveEmptyEntries)
-                        .SelectMany(x => x.Split(new[] {","}, StringSplitOptions.RemoveEmptyEntries))
-                        .ToList();
-                    var pattern = entries.First();
-                    var users = entries.Skip(1)
-                        // CODEOWNERS could also started with "@".
-                        .Select(x => x.TrimStart('@'))
-                        .ToList();
+                    var splitIndex = line.IndexOf(" ", StringComparison.InvariantCulture);
+                    
+                    var pattern = line.Substring(0, splitIndex);
+                    var usersString = line.Substring(splitIndex + 1);
+                    
+                    var match = Regex.Matches(usersString, @"([\""""].+?[\""""])|[^ ,]+");
+
+                    var users = match.Cast<Match>().Select(x => x.Value.TrimStart('\"').TrimStart('@').TrimEnd('\"')).ToList();
                     
                     if(users.Count == 0)
                         throw new Exception($"You must provide a user for pattern {pattern}");

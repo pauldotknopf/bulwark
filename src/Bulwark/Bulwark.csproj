@@ -6,7 +6,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.FileProviders.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
-    <PackageReference Include="LibGit2Sharp" Version="0.26.0" />
+    <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
     <PackageReference Include="SharpWildmatch" Version="0.1.0" />
   </ItemGroup>
 </Project>

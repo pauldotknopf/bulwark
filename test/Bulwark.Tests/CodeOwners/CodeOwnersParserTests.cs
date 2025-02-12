@@ -45,6 +45,21 @@ namespace Bulwark.Tests.CodeOwners
         }
         
         [Fact]
+        public async Task Users_can_have_quotes()
+        {
+            var content = new StringBuilder();
+            content.AppendLine("# comment");
+            content.AppendLine("test/* \"@user1\",@user2");
+            content.AppendLine("# another");
+
+            var result = await _codeOwnersParser.ParserConfig(content.ToString());
+
+            result.Entries.Count.ShouldBeEqualTo(1);
+            result.Entries[0].Pattern.ShouldBeEqualTo("test/*");
+            result.Entries[0].Users.ShouldBeEqualTo(new List<string> {"user1", "user2"});
+        }
+        
+        [Fact]
         public async Task Users_can_be_sep_by_comma()
         {
             var content = new StringBuilder();
